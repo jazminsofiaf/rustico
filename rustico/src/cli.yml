@@ -1,0 +1,27 @@
+name: rustico
+version: "1.0"
+author: Jazmin Ferreiro <jferreiro@fi.uba.ar>, Matias Rozanec <mrozanec@fi.uba.ar>
+about: Juego de cartas con naipes franceses ideado por Pablo Deymonnaz <pdeymon@fi.uba.ar>
+args:
+#    - config:
+#        short: c
+#        long: config
+#        value_name: FILE
+#        help: Sets a custom config file
+#        takes_value: true
+    - verbose:
+        short: v
+        multiple: true
+        help: Sets the level of verbosity
+    - cant_jugadores:
+        short: n
+        long: cant-jugadores
+        help: sets num of players
+        takes_value: true
+        possible_values: ["4","6","8","10","12","14","16","18","20","22","24","26"]
+    - debug:
+        short: d
+        long: debug
+        help: should write debug log?
+        takes_value: true
+        possible_values: ["true","false"]
