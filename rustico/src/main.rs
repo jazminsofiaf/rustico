@@ -1,6 +1,10 @@
 extern crate clap;
 use clap::App;
 
+mod card;
+mod player;
+use crate::card::get_card_dec;
+use crate::player::Player;
 fn main(){
     let mut cant_jugadores: u8 = 4;
     let mut debug: bool = true;
@@ -8,6 +12,24 @@ fn main(){
 
     println!("{}", cant_jugadores);
     println!("{}", debug);
+
+    let card_deck = get_card_dec();
+
+
+    //TODO initialise with cards
+    let mut player:Player = Player::new();
+
+    //TODO DEFINIR RONDAS
+    for _x in 0..2{
+        let card = player.getCard();
+        println!("player throw {}", card);
+    }
+
+
+    player.wait();
+
+    println!("game ends");
+
 }
 
 fn parse_args(_cant_jugadores: &mut u8, _debug: &mut bool) {
