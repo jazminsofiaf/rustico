@@ -1,7 +1,10 @@
 use std::thread;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
-use crate::card::{FrenchCard, CardSuit, CardNumber};
+use rustico::card::french_card::FrenchCard;
+use rustico::card::card_suit::card_suit::CardSuit;
+use rustico::card::card_number::card_number::CardNumber;
+
 
 pub struct Player {
     thread: Option<thread::JoinHandle<()>>,
@@ -30,7 +33,7 @@ impl Player {
         }
     }
 
-    pub fn getCard(&self) -> FrenchCard {
+    pub fn get_card(&self) -> FrenchCard {
         self.card_receiver.recv().expect("No more cards")
     }
 

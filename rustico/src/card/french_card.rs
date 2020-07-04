@@ -1,58 +1,6 @@
 use core::fmt;
-
-#[derive(PartialEq, Eq)]
-pub enum CardSuit  {
-    CLOVER, HEART, DIAMOND, PIKE,
-}
-impl CardSuit {
-    fn value(&self) -> char {
-        match *self {
-            CardSuit::CLOVER => '♣',
-            CardSuit::HEART => '❤',
-            CardSuit::DIAMOND => '♦',
-            CardSuit::PIKE => '♠',
-        }
-    }
-}
-
-impl fmt::Display for CardSuit {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value())
-    }
-}
-// call like CardSuit::enumvalue.value()
-
-#[derive(PartialEq, Eq)]
-pub enum CardNumber  {
-    TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, TEN,
-    J, Q, K, A
-}
-
-impl fmt::Display for CardNumber {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.value())
-    }
-}
-
-impl CardNumber {
-    fn value(&self) -> u32 {
-        match *self {
-            CardNumber::TWO => 2,
-            CardNumber::THREE => 3,
-            CardNumber::FOUR => 4,
-            CardNumber::FIVE => 5,
-            CardNumber::SIX => 6,
-            CardNumber::SEVEN => 7,
-            CardNumber::EIGHT => 8,
-            CardNumber::NINE => 9,
-            CardNumber::TEN => 10,
-            CardNumber::J => 11,
-            CardNumber::Q => 12,
-            CardNumber::K => 13,
-            CardNumber::A => 14,
-        }
-    }
-}
+use crate::card::card_suit::card_suit::CardSuit;
+use crate::card::card_number::card_number::CardNumber;
 
 
 #[derive(PartialEq, Eq)]
@@ -63,7 +11,7 @@ pub struct FrenchCard {
 
 impl  FrenchCard {
 
-    pub(crate) fn new(suit: CardSuit, number: CardNumber) ->  FrenchCard {
+    pub fn new(suit: CardSuit, number: CardNumber) ->  FrenchCard {
         FrenchCard { suit, number }
     }
 }

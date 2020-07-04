@@ -1,10 +1,12 @@
 extern crate clap;
 use clap::App;
 
-mod card;
+use rustico::card::french_card::get_card_dec;
+
 mod player;
-use crate::card::get_card_dec;
 use crate::player::Player;
+
+
 fn main(){
     let mut cant_jugadores: u8 = 4;
     let mut debug: bool = true;
@@ -21,7 +23,7 @@ fn main(){
 
     //TODO DEFINIR RONDAS
     for _x in 0..2{
-        let card = player.getCard();
+        let card = player.get_card();
         println!("player throw {}", card);
     }
 
