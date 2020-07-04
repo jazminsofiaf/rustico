@@ -1,9 +1,9 @@
 use std::thread;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::mpsc;
-use rustico::card::french_card::FrenchCard;
-use rustico::card::card_suit::card_suit::CardSuit;
-use rustico::card::card_number::card_number::CardNumber;
+use crate::card::french_card::FrenchCard;
+use crate::card::card_suit::card_suit::CardSuit;
+use crate::card::card_number::card_number::CardNumber;
 
 
 pub struct Player {

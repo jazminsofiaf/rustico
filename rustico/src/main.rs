@@ -3,8 +3,9 @@ use clap::App;
 
 use rustico::card::french_card::get_card_dec;
 
-mod player;
-use crate::player::Player;
+
+
+use rustico::players::player::Player;
 
 
 fn main(){
