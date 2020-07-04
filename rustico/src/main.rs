@@ -15,11 +15,13 @@ fn main(){
     println!("{}", cant_jugadores);
     println!("{}", debug);
 
+
+
+
+    let mut players:Vec<Player> = Vec::new();
+
     let card_deck = get_card_dec();
-
-
-    //TODO initialise with cards
-    let mut player:Player = Player::new();
+    let mut player:Player = Player::new(card_deck);
 
     //TODO DEFINIR RONDAS
     for _x in 0..2{

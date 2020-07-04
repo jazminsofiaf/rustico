@@ -1,5 +1,5 @@
 use std::thread;
-use std::sync::mpsc::Receiver;
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::mpsc;
 use rustico::card::french_card::FrenchCard;
 use rustico::card::card_suit::card_suit::CardSuit;
@@ -9,14 +9,21 @@ use rustico::card::card_number::card_number::CardNumber;
 pub struct Player {
     thread: Option<thread::JoinHandle<()>>,
     card_receiver: Receiver<FrenchCard>,
+    cards: Vec<FrenchCard>
 }
 
 impl Player {
-    pub fn new() -> Player {
+    pub fn new(cards: Vec<FrenchCard>) -> Player {
         let (card_sender , card_receiver) = mpsc::channel::<FrenchCard>();
+        Player {
+            thread: Some(Player::init_play(card_sender)),
+            card_receiver,
+            cards
+        }
+    }
 
-
-        let thread = thread::spawn(move || {
+    fn init_play(card_sender: Sender<FrenchCard>) -> thread::JoinHandle<()>{
+        let threadHandler = thread::spawn(move || {
             //TODO use condvar while(continue playing)
             for _x in 0..2 {
                 println!("playing ");
@@ -26,11 +33,7 @@ impl Player {
                 card_sender.send(card).unwrap();
             }
         });
-
-        Player {
-            thread: Some(thread),
-            card_receiver
-        }
+        return threadHandler;
     }
 
     pub fn get_card(&self) -> FrenchCard {
