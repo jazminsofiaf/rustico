@@ -46,8 +46,7 @@ impl Player {
                      continue;
                  }
 
-
-                 println!("[Player {}] round {:?}",id, this_round);
+                 println!("[Player {}] round {}",id, this_round);
                  let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
                  println!("[Player {}] sending card {}",id, first_card);
                  let card_to_send = PlayerCard{

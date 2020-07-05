@@ -4,16 +4,20 @@ use crate::players::player::Player;
 use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, Mutex, Condvar, RwLock};
+use std::borrow::Borrow;
 
 pub struct PlayerCard {
     pub player_id: i32,
     pub card: FrenchCard,
 }
 
+const TEN_POINTS :i32 = 10;
+
 pub struct Coordinator {
      number_of_players: i32,
      barrier: Arc<Barrier>,
      round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
+     players: Vec<Player>,
 }
 
 impl Coordinator {
@@ -24,10 +28,13 @@ impl Coordinator {
 
         let round_notification  = Arc::new((Mutex::new((false, -1)), Condvar::new()));
 
+        let players = Vec::with_capacity(number_of_players as usize);
+
         return Coordinator {
             number_of_players,
             barrier,
             round_notification,
+            players,
         };
     }
 
@@ -45,32 +52,32 @@ impl Coordinator {
     }
 
 
-    pub fn deal_cards_between_players(&self, cards : Vec<FrenchCard>) ->  Vec<Player>{
+    pub fn deal_cards_between_players(&mut self, cards : Vec<FrenchCard>) {
 
         let number_of_rounds = cards.len() as i32/ self.number_of_players;
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();
 
-        let mut players: Vec<Player>= Vec::with_capacity(self.number_of_players as usize);
-            for player_id in 0..self.number_of_players {
+
+        for player_id in 0..self.number_of_players {
                 let cards_for_player: Vec<FrenchCard> = card_iter.by_ref().take(amount_of_cards_by_player).collect();
                 let player: Player = Player::new(player_id, cards_for_player, self.round_notification.clone(), number_of_rounds);
-                players.push(player);
-            }
+                self.players.push(player);
+        }
+
         let remaining_cards: Vec<FrenchCard> =  card_iter.by_ref().take(amount_of_cards_by_player).collect();
         println!("remaining cards  {:?} ", remaining_cards);
-        return players;
     }
 
 
 
-    pub fn let_the_game_begin(&self){
+    pub fn let_the_game_begin(&mut self){
         println!("let the games begin");
 
         let deck : Vec<FrenchCard> = self.shuffle_deck();
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
-        let players: Vec<Player> = self.deal_cards_between_players(deck);
+        self.deal_cards_between_players(deck);
 
         let &(ref mtx, ref cnd) = &*self.round_notification;
 
@@ -86,7 +93,7 @@ impl Coordinator {
             }
 
             let mut hand = Vec::new();
-            for player in players.iter()  {
+            for player in self.players.iter()  {
                 let player_card: PlayerCard= player.get_card();
                 println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
                 hand.push(player_card);
@@ -99,15 +106,19 @@ impl Coordinator {
             }
         }
 
-        for mut player in players{
+        for player in self.players.iter_mut()  {
             player.wait();
         }
 
         println!("game ends");
     }
 
-    pub fn compute_score(mut hand: Vec<PlayerCard>){
-        hand.iter().max_by(|one, other| other.card.cmp(&other.card));
+    fn compute_score(&mut self, hand: Vec<PlayerCard>){
+       let winner_response = hand.iter()
+           .max_by(|one, other| other.card.cmp(&other.card))
+           .unwrap();
+        let winner: &mut Player= &mut self.players[winner_response.player_id as usize];
+        winner.win_points(TEN_POINTS);
 
     }
 
