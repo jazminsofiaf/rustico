@@ -65,6 +65,10 @@ impl Player {
         self.points = self.points + new_points;
     }
 
+    pub fn get_points(&self)->i32{
+        return self.points;
+    }
+
 
     pub fn get_card(&self) -> PlayerCard {
         self.card_receiver.recv().expect("No more cards")
