@@ -5,6 +5,10 @@ use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, Mutex, Condvar, RwLock};
 
+pub struct PlayerCard {
+    pub player_id: i32,
+    pub card: FrenchCard,
+}
 
 pub struct Coordinator {
      number_of_players: i32,
@@ -78,21 +82,24 @@ impl Coordinator {
                 *round_guard = this_round;
             }
 
+            let mut hand = Vec::new();
             for player in players.iter()  {
-                let (id, card) = player.get_card();
-                println!("receiving card: {} from player {}",card, id);
-
+                let player_card: PlayerCard= player.get_card();
+                println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
+                hand.push(player_card);
             }
-
-
         }
-
 
         for mut player in players{
             player.wait();
         }
 
         println!("game ends");
+    }
+
+    pub fn compute_score(mut hand: Vec<PlayerCard>){
+        hand.iter().max_by(|one, other| other.card.cmp(&other.card));
+
     }
 
 

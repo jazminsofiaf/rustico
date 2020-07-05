@@ -1,7 +1,8 @@
 pub mod card_number {
     use core::fmt;
+    use std::cmp::Ordering;
 
-    #[derive(PartialEq, Eq, Debug)]
+    #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
     pub enum CardNumber {
         TWO,
         THREE,
@@ -43,4 +44,6 @@ pub mod card_number {
             }
         }
     }
+
+
 }

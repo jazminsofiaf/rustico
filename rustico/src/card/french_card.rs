@@ -1,6 +1,7 @@
 use core::fmt;
 use crate::card::card_suit::card_suit::CardSuit;
 use crate::card::card_number::card_number::CardNumber;
+use std::cmp::Ordering;
 
 
 #[derive(PartialEq, Eq, Debug)]
@@ -10,9 +11,20 @@ pub struct FrenchCard {
 }
 
 impl  FrenchCard {
-
     pub fn new(suit: CardSuit, number: CardNumber) ->  FrenchCard {
         FrenchCard { suit, number }
+    }
+
+}
+impl Ord for FrenchCard {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.number.cmp(&other.number)
+    }
+}
+
+impl PartialOrd for FrenchCard {
+    fn partial_cmp(&self, other: &FrenchCard) -> Option<Ordering> {
+        Some(self.number.cmp(&other.number))
     }
 }
 
