@@ -10,15 +10,16 @@ use rustico::players::coordinator::Coordinator;
 
 
 fn main(){
-    let mut amount_of_players: i32 = 4;
+    let mut number_of_players: i32 = 4;
     let mut debug: bool = true;
-    parse_args(&mut amount_of_players, &mut debug);
+    parse_args(&mut number_of_players, &mut debug);
 
-    println!("{}", amount_of_players);
-    println!("{}", debug);
+    println!("debug: {}", debug);
+    println!("number of players: {}", number_of_players);
 
-    let coordinator : Coordinator = Coordinator::new(amount_of_players);
-    coordinator.play_game();
+
+    let coordinator : Coordinator = Coordinator::new(number_of_players);
+    coordinator.let_the_game_begin();
 
 }
 
