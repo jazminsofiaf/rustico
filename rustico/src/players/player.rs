@@ -15,7 +15,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(id: i32, cards: Vec<FrenchCard>,
-               round_notification: Arc<RwLock<i32>>,
+               round_notification:  Arc<(Mutex<(bool, i32)>, Condvar)>,
                total_rounds: i32 ) -> Player {
         let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
         Player {
@@ -28,17 +28,26 @@ impl Player {
     fn init_play(id: i32,
                  card_sender: Sender<PlayerCard>,
                  mut my_cards: Vec<FrenchCard>,
-                 round_notification: Arc<RwLock<i32>>,
+                 round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
                  total_rounds: i32) -> thread::JoinHandle<()>{
         let threadHandler = thread::spawn(move || {
 
+            let &(ref mtx, ref cnd) = &*round_notification;
+
             let mut this_round = 0;
              while this_round < total_rounds {
-                 let round = round_notification.read().unwrap();
-                 if *round != this_round {
-                     continue
+
+                 let mut round_has_started = mtx.lock().unwrap();
+                 while !round_has_started.0 {
+                     println!("[Player {}] wait to start round {}", id, this_round);
+                     round_has_started = cnd.wait(round_has_started).unwrap();
                  }
-                 println!("[Player {}] round {:?}",id, *round);
+                 if round_has_started.1 != this_round  {
+                     continue;
+                 }
+
+
+                 println!("[Player {}] round {:?}",id, this_round);
                  let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
                  println!("[Player {}] sending card {}",id, first_card);
                  let card_to_send = PlayerCard{

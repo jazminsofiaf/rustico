@@ -13,7 +13,7 @@ pub struct PlayerCard {
 pub struct Coordinator {
      number_of_players: i32,
      barrier: Arc<Barrier>,
-     round_notification: Arc<RwLock<i32>>
+     round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
 }
 
 impl Coordinator {
@@ -22,7 +22,7 @@ impl Coordinator {
         /* to know who was the last player to lay a card down */
         let barrier = Arc::new(Barrier::new(number_of_players as usize));
 
-        let round_notification = Arc::new(RwLock::new(-1));
+        let round_notification  = Arc::new((Mutex::new((false, -1)), Condvar::new()));
 
         return Coordinator {
             number_of_players,
@@ -72,14 +72,17 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
         let players: Vec<Player> = self.deal_cards_between_players(deck);
 
+        let &(ref mtx, ref cnd) = &*self.round_notification;
 
         for this_round in 0..number_of_rounds {
             let round_type= self.get_round_type();
             println!("new round : {}, type = {} ", this_round, round_type);
 
-            {   // RAII lock free in end block
-                let mut round_guard =self.round_notification.write().expect("coordinator cant notify new round");
-                *round_guard = this_round;
+            {
+                let mut guard = mtx.lock().unwrap();
+                guard.1 = guard.1.wrapping_add(1);
+                guard.0 = true;
+                cnd.notify_all();
             }
 
             let mut hand = Vec::new();
@@ -87,6 +90,12 @@ impl Coordinator {
                 let player_card: PlayerCard= player.get_card();
                 println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
                 hand.push(player_card);
+            }
+
+            {
+                let mut guard = mtx.lock().unwrap();
+                guard.0 = false;
+                cnd.notify_all();
             }
         }
 
