@@ -3,7 +3,7 @@ use crate::card::card_suit::card_suit::CardSuit;
 use crate::card::card_number::card_number::CardNumber;
 
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct FrenchCard {
     suit: CardSuit,
     number: CardNumber,

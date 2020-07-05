@@ -1,7 +1,7 @@
 pub mod card_suit {
     use core::fmt;
 
-    #[derive(PartialEq, Eq)]
+    #[derive(PartialEq, Eq, Debug)]
     pub enum CardSuit {
         CLOVER,
         HEART,

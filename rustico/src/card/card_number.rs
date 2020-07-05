@@ -1,7 +1,7 @@
 pub mod card_number {
     use core::fmt;
 
-    #[derive(PartialEq, Eq)]
+    #[derive(PartialEq, Eq, Debug)]
     pub enum CardNumber {
         TWO,
         THREE,

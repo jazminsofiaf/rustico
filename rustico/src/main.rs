@@ -6,42 +6,27 @@ use rustico::card::french_card::get_card_dec;
 
 
 use rustico::players::player::Player;
+use rustico::players::coordinator::Coordinator;
 
 
 fn main(){
-    let mut cant_jugadores: u8 = 4;
+    let mut amount_of_players: i32 = 4;
     let mut debug: bool = true;
-    parse_args(&mut cant_jugadores, &mut debug);
+    parse_args(&mut amount_of_players, &mut debug);
 
-    println!("{}", cant_jugadores);
+    println!("{}", amount_of_players);
     println!("{}", debug);
 
-
-
-
-    let mut players:Vec<Player> = Vec::new();
-
-    let card_deck = get_card_dec();
-    let mut player:Player = Player::new(card_deck);
-
-    //TODO DEFINIR RONDAS
-    for _x in 0..2{
-        let card = player.get_card();
-        println!("player throw {}", card);
-    }
-
-
-    player.wait();
-
-    println!("game ends");
+    let coordinator : Coordinator = Coordinator::new(amount_of_players);
+    coordinator.play_game();
 
 }
 
-fn parse_args(_cant_jugadores: &mut u8, _debug: &mut bool) {
+fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {
     let yaml = clap::load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let cant_jugadores = matches.value_of("cant_jugadores").unwrap_or("4").parse::<u8>().unwrap();
+    let cant_jugadores = matches.value_of("cant_jugadores").unwrap_or("4").parse::<i32>().unwrap();
 
     let debug = matches.value_of("debug").unwrap_or("true").parse::<bool>().unwrap();
 
