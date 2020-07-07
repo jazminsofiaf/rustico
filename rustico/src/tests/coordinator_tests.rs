@@ -1,7 +1,7 @@
 use crate::players::coordinator::{Coordinator, PlayerCard};
 use crate::card::french_card::{FrenchCard, get_card_dec};
 use crate::players::player::Player;
-use std::sync::{Arc, Mutex, Condvar};
+use std::sync::{Arc, Mutex, Condvar, Barrier};
 use crate::card::card_suit::card_suit::CardSuit;
 use crate::card::card_number::card_number::CardNumber;
 
@@ -96,7 +96,7 @@ fn get_players()-> Vec<Player>{
     for player_id in 0..4{
         let cards: Vec<FrenchCard> =  Vec::new();
         let arc =  Arc::new((Mutex::new((false, -1)), Condvar::new()));
-        let player: Player = Player::new(player_id, cards,  arc,1 );
+        let player: Player = Player::new(player_id, cards,  arc,1, Arc::new(Barrier::new(1)));
         players.push(player);
     }
     return players;
