@@ -5,5 +5,5 @@ fn it_works() {
 
 #[test]
 fn it_fails() {
-    assert_eq!(2 , 4);
+    assert_eq!(2, 4);
 }

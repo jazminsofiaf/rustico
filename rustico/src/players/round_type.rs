@@ -1,4 +1,3 @@
-
 pub mod round_type {
     use core::fmt;
     use rand::Rng;
@@ -8,20 +7,19 @@ pub mod round_type {
     #[derive(PartialEq, Eq)]
     pub enum RoundType {
         NORMAL,
-        RUSTIC
+        RUSTIC,
     }
 
-    impl RoundType{
-        fn value(&self)-> String {
+    impl RoundType {
+        fn value(&self) -> String {
             match *self {
                 RoundType::NORMAL => "NORMAL",
                 RoundType::RUSTIC => "RUSTIC",
             }.to_string()
         }
-
     }
 
-    impl Distribution<RoundType>  for Standard {
+    impl Distribution<RoundType> for Standard {
         fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> RoundType {
             match rng.gen_range(0, 2) {
                 0 => RoundType::NORMAL,
