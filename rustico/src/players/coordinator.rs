@@ -3,8 +3,9 @@ use rand::{Rng, thread_rng};
 use crate::players::player::Player;
 use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
-use std::sync::{Arc, Barrier, Mutex, Condvar, RwLock};
+use std::sync::{Arc, Barrier, Mutex, Condvar, RwLock, mpsc};
 use std::borrow::Borrow;
+use std::sync::mpsc::{Receiver, Sender};
 
 pub struct PlayerCard {
     pub player_id: i32,
@@ -16,6 +17,8 @@ const TEN_POINTS :i32 = 10;
 pub struct Coordinator {
      number_of_players: i32,
      barrier: Arc<Barrier>,
+     card_sender: Sender<PlayerCard>,
+     card_receiver: Receiver<PlayerCard>,
      round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
 }
 
@@ -27,9 +30,13 @@ impl Coordinator {
 
         let round_notification  = Arc::new((Mutex::new((false, -1)), Condvar::new()));
 
+        let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
+
         return Coordinator {
             number_of_players,
             barrier,
+            card_sender,
+            card_receiver,
             round_notification,
         };
     }
@@ -56,10 +63,11 @@ impl Coordinator {
         let mut card_iter = cards.into_iter().peekable();
 
 
+
         let mut players: Vec<Player> = Vec::with_capacity(self.number_of_players as usize);
         for player_id in 0..self.number_of_players {
                 let cards_for_player: Vec<FrenchCard> = card_iter.by_ref().take(amount_of_cards_by_player).collect();
-                let player: Player = Player::new(player_id, cards_for_player, self.round_notification.clone(), number_of_rounds);
+                let player: Player = Player::new(player_id, self.card_sender.clone(), cards_for_player, self.round_notification.clone(), number_of_rounds);
                 players.push(player);
         }
 
@@ -92,7 +100,8 @@ impl Coordinator {
 
             let mut hand = Vec::new();
             for player in players.iter()  {
-                let player_card: PlayerCard= player.get_card();
+
+                let player_card: PlayerCard = self.card_receiver.recv().expect("No more cards");
                 println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
                 hand.push(player_card);
             }

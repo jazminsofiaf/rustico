@@ -9,18 +9,17 @@ use crate::players::coordinator::PlayerCard;
 
 pub struct Player {
     thread: Option<thread::JoinHandle<()>>,
-    card_receiver: Receiver<PlayerCard>,
     points: i32,
 }
 
 impl Player {
-    pub fn new(id: i32, cards: Vec<FrenchCard>,
+    pub fn new(id: i32,
+               card_sender: Sender<PlayerCard>,
+               cards: Vec<FrenchCard>,
                round_notification:  Arc<(Mutex<(bool, i32)>, Condvar)>,
                total_rounds: i32 ) -> Player {
-        let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
         Player {
             thread: Some(Player::init_play(id, card_sender, cards, round_notification, total_rounds)),
-            card_receiver,
             points: 0,
         }
     }
@@ -69,10 +68,6 @@ impl Player {
         return self.points;
     }
 
-
-    pub fn get_card(&self) -> PlayerCard {
-        self.card_receiver.recv().expect("No more cards")
-    }
 
     pub fn wait(&mut self){
         match self.thread.take() {
