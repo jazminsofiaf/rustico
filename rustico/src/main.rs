@@ -1,15 +1,10 @@
 extern crate clap;
+
 use clap::App;
 
-use rustico::card::french_card::get_card_dec;
-
-
-
-use rustico::players::player::Player;
 use rustico::players::coordinator::Coordinator;
 
-
-fn main(){
+fn main() {
     let mut number_of_players: i32 = 4;
     let mut debug: bool = true;
     parse_args(&mut number_of_players, &mut debug);
@@ -20,7 +15,6 @@ fn main(){
 
     let coordinator: Coordinator = Coordinator::new(number_of_players);
     coordinator.let_the_game_begin();
-
 }
 
 fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {
@@ -33,5 +27,4 @@ fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {
 
     *_cant_jugadores = cant_jugadores;
     *_debug = debug;
-
 }

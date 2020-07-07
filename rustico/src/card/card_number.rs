@@ -1,6 +1,5 @@
 pub mod card_number {
     use core::fmt;
-    use std::cmp::Ordering;
 
     #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
     pub enum CardNumber {
@@ -16,7 +15,7 @@ pub mod card_number {
         J,
         Q,
         K,
-        A
+        A,
     }
 
     impl fmt::Display for CardNumber {
@@ -44,6 +43,4 @@ pub mod card_number {
             }
         }
     }
-
-
 }

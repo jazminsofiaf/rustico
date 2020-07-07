@@ -1,36 +1,34 @@
 use std::thread;
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{mpsc, Arc, Mutex, Condvar, RwLock, Barrier};
+use std::sync::mpsc::{Sender};
+use std::sync::{Arc, Mutex, Condvar};
 use crate::card::french_card::FrenchCard;
-use crate::card::card_suit::card_suit::CardSuit;
-use crate::card::card_number::card_number::CardNumber;
 use crate::players::coordinator::PlayerCard;
 use colored::Colorize;
 
 
 pub struct Player {
     thread: Option<thread::JoinHandle<()>>,
-    card_receiver: Receiver<PlayerCard>,
     points: i32,
 }
 
 impl Player {
-    pub fn new(id: i32, cards: Vec<FrenchCard>,
+    pub fn new(id: i32,
+               card_sender: Sender<PlayerCard>,
+               cards: Vec<FrenchCard>,
                round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
-               total_rounds: i32, barrier: Arc<Barrier>) -> Player {
-        let (card_sender, card_receiver) = mpsc::channel::<PlayerCard>();
+               total_rounds: i32) -> Player {
         Player {
-            thread: Some(Player::init_play(id, card_sender, cards, round_notification, total_rounds, barrier)),
-            card_receiver,
+            thread: Some(Player::init_play(id, card_sender, cards, round_notification, total_rounds)),
             points: 0,
         }
     }
+
 
     fn init_play(id: i32,
                  card_sender: Sender<PlayerCard>,
                  mut my_cards: Vec<FrenchCard>,
                  round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
-                 total_rounds: i32, barrier: Arc<Barrier>) -> thread::JoinHandle<()> {
+                 total_rounds: i32) -> thread::JoinHandle<()> {
         let thread_handler = thread::spawn(move || {
             let &(ref mtx, ref cnd) = &*round_notification;
 
@@ -67,11 +65,6 @@ impl Player {
 
     pub fn get_points(&self) -> i32 {
         return self.points;
-    }
-
-
-    pub fn get_card(&self) -> PlayerCard {
-        self.card_receiver.recv().expect("No more cards")
     }
 
     pub fn wait(&mut self) {
