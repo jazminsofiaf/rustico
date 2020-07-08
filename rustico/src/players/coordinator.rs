@@ -3,10 +3,10 @@ use rand::{Rng, thread_rng};
 use crate::players::player::Player;
 use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
-
-use std::sync::{Arc, Barrier, Mutex, Condvar, mpsc};
+use std::sync::{Arc, Barrier, mpsc, RwLock};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
+use crate::players::round_type::round_type::RoundType::{RUSTIC};
 
 
 pub struct PlayerCard {
@@ -18,18 +18,29 @@ const TEN_POINTS: i32 = 10;
 
 pub struct Coordinator {
     number_of_players: i32,
-    barrier: Arc<Barrier>,
+    start_of_round_barrier: Arc<Barrier>,
     card_sender: Sender<PlayerCard>,
     card_receiver: Receiver<PlayerCard>,
-    round_notification: Arc<(Mutex<(bool, i32)>, Condvar)>,
+    round_info: Arc<RwLock<RoundInfo>>,
+}
+
+pub struct RoundInfo {
+    pub(crate) forbidden_player_id: i32,
+    pub(crate) there_are_forbidden_players: bool,
+    pub(crate) game_ended: bool,
 }
 
 impl Coordinator {
     pub fn new(number_of_players: i32) -> Coordinator {
-        /* to know who was the last player to lay a card down */
-        let barrier = Arc::new(Barrier::new(number_of_players as usize));
+        /* to sync start of round */
+        let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
-        let round_notification = Arc::new((Mutex::new((false, -1)), Condvar::new()));
+        let round_info = RoundInfo {
+            forbidden_player_id: 0,
+            there_are_forbidden_players: false,
+            game_ended: false,
+        };
+        let round_info: Arc<RwLock<RoundInfo>> = Arc::new(RwLock::new(round_info));
 
         let (card_sender, card_receiver) = mpsc::channel::<PlayerCard>();
 
@@ -37,10 +48,10 @@ impl Coordinator {
 
         return Coordinator {
             number_of_players,
-            barrier,
+            start_of_round_barrier,
             card_sender,
             card_receiver,
-            round_notification,
+            round_info,
         };
     }
 
@@ -59,7 +70,6 @@ impl Coordinator {
 
 
     pub fn deal_cards_between_players(&self, cards: Vec<FrenchCard>) -> Vec<Player> {
-        let number_of_rounds = cards.len() as i32 / self.number_of_players;
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();
@@ -69,8 +79,11 @@ impl Coordinator {
         let mut players: Vec<Player> = Vec::with_capacity(self.number_of_players as usize);
         for player_id in 0..self.number_of_players {
             let cards_for_player: Vec<FrenchCard> = card_iter.by_ref().take(amount_of_cards_by_player).collect();
-            let player: Player = Player::new(player_id, self.card_sender.clone(), cards_for_player,
-                                             self.round_notification.clone(), number_of_rounds);
+            let player: Player = Player::new(player_id,
+                                             self.card_sender.clone(),
+                                             cards_for_player,
+                                             self.start_of_round_barrier.clone(),
+                                             Arc::clone(&self.round_info));
             players.push(player);
         }
 
@@ -89,24 +102,20 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
         let mut players: Vec<Player> = self.deal_cards_between_players(deck);
 
-
-        let (mtx, cnd) = &*self.round_notification;
-        // let &(ref mtx, ref cnd) = &*self.round_notification;
-
         for this_round in 0..number_of_rounds {
             let round_type = self.get_round_type();
 
-            // println!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_type);
             println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_type).bright_blue());
 
             {
-                let mut guard = mtx.lock().unwrap();
-                // guard.1 = guard.1 + 1;
-                guard.1 = guard.1.wrapping_add(1);
-                guard.0 = true;
-                cnd.notify_all();
-                println!("{}", "New round started!".red());
+                let mut w = self.round_info.write().unwrap();
+                // TODO actualizar con id correspondiente en caso que un jugador haya llegado ultimo
+                (*w).forbidden_player_id = 50;
             }
+
+            println!("from coord. 'bout to start round");
+            let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
+            println!("{} from coord.", barrier_wait_result);
 
             let mut hand = Vec::new();
 
@@ -117,20 +126,34 @@ impl Coordinator {
                 hand.push(player_card);
             }
 
-            {
-                let mut guard = mtx.lock().unwrap();
-                guard.0 = false;
-                cnd.notify_all();
-            }
+            // TODO computo puntaje.
 
             println!("{}", "End of round.".bright_red());
+
+            /* this update occurs here because it is relevant for the next round, but it must be
+             * computed with this round's values
+             * */
+            if round_type == RUSTIC {
+                let mut w = self.round_info.write().unwrap();
+                (*w).there_are_forbidden_players = true;
+            }
         }
 
+
+        /* signal end of game and enable one more round so players can read updated status */
+        {
+            let mut w = self.round_info.write().unwrap();
+            (*w).game_ended = true;
+            self.start_of_round_barrier.wait();
+        }
+
+        /* wait for all threads for nice program termination */
         for player in players.iter_mut() {
             player.wait();
         }
 
         println!("game ends");
+        //     TODO Print leaderboard.
     }
 
     pub fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
