@@ -3,7 +3,7 @@ use rand::{Rng, thread_rng};
 use crate::players::player::Player;
 use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
-use std::sync::{Arc, Barrier, Mutex, Condvar, mpsc, RwLock};
+use std::sync::{Arc, Barrier, mpsc, RwLock};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
 
@@ -61,7 +61,6 @@ impl Coordinator {
 
 
     pub fn deal_cards_between_players(&self, cards: Vec<FrenchCard>) -> Vec<Player> {
-        let number_of_rounds = cards.len() as i32 / self.number_of_players;
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();

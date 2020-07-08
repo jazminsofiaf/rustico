@@ -1,6 +1,6 @@
 use std::thread;
 use std::sync::mpsc::{Sender};
-use std::sync::{Arc, Mutex, Condvar, Barrier, RwLock};
+use std::sync::{Arc, Barrier, RwLock};
 use crate::card::french_card::FrenchCard;
 use crate::players::coordinator::PlayerCard;
 use colored::Colorize;
@@ -30,8 +30,7 @@ impl Player {
                  barrier: Arc<Barrier>,
                  round_info: Arc<RwLock<u32>>) -> thread::JoinHandle<()> {
         let thread_handler = thread::spawn(move || {
-            let mut still_playing = true;
-            while still_playing {
+            loop {
                 println!("{}", format!("[Player {}] waiting to start round", id).dimmed().red());
                 let barrier_wait_result = barrier.wait().is_leader();
 
