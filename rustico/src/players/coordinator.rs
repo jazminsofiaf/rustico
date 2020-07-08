@@ -6,6 +6,7 @@ use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, mpsc, RwLock};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
+use crate::players::round_type::round_type::RoundType::{RUSTIC};
 
 pub struct PlayerCard {
     pub player_id: i32,
@@ -19,7 +20,13 @@ pub struct Coordinator {
     start_of_round_barrier: Arc<Barrier>,
     card_sender: Sender<PlayerCard>,
     card_receiver: Receiver<PlayerCard>,
-    round_info: Arc<RwLock<u32>>,
+    round_info: Arc<RwLock<RoundInfo>>,
+}
+
+pub struct RoundInfo {
+    pub(crate) forbidden_player_id: i32,
+    pub(crate) there_are_forbidden_players: bool,
+    pub(crate) game_ended: bool,
 }
 
 impl Coordinator {
@@ -27,13 +34,12 @@ impl Coordinator {
         /* to sync start of round */
         let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
-        /* To specify which players shouldn't play next round.
-         * Below, table with values (protocol):
-         *          - player id: specified player shouldn't play this round
-         *          - 50: all players should play
-         *          - 99: game ended
-         * */
-        let round_info: Arc<RwLock<u32>> = Arc::new(RwLock::new(50));
+        let round_info = RoundInfo {
+            forbidden_player_id: 0,
+            there_are_forbidden_players: false,
+            game_ended: false,
+        };
+        let round_info: Arc<RwLock<RoundInfo>> = Arc::new(RwLock::new(round_info));
 
         let (card_sender, card_receiver) = mpsc::channel::<PlayerCard>();
 
@@ -100,7 +106,7 @@ impl Coordinator {
             {
                 let mut w = self.round_info.write().unwrap();
                 // TODO actualizar con id correspondiente en caso que un jugador haya llegado ultimo
-                *w = 50;
+                (*w).forbidden_player_id = 50;
             }
 
             println!("from coord. 'bout to start round");
@@ -117,13 +123,21 @@ impl Coordinator {
             // TODO computo puntaje.
 
             println!("{}", "End of round.".bright_red());
+
+            /* this update occurs here because it is relevant for the next round, but it must be
+             * computed with this round's values
+             * */
+            if round_type == RUSTIC {
+                let mut w = self.round_info.write().unwrap();
+                (*w).there_are_forbidden_players = true;
+            }
         }
 
 
         /* signal end of game and enable one more round so players can read updated status */
         {
             let mut w = self.round_info.write().unwrap();
-            *w = 99;
+            (*w).game_ended = true;
             self.start_of_round_barrier.wait();
         }
 

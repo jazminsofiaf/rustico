@@ -2,7 +2,7 @@ use std::thread;
 use std::sync::mpsc::{Sender};
 use std::sync::{Arc, Barrier, RwLock};
 use crate::card::french_card::FrenchCard;
-use crate::players::coordinator::PlayerCard;
+use crate::players::coordinator::{PlayerCard, RoundInfo};
 use colored::Colorize;
 
 
@@ -16,7 +16,7 @@ impl Player {
                card_sender: Sender<PlayerCard>,
                cards: Vec<FrenchCard>,
                start_of_round_barrier: Arc<Barrier>,
-               round_info: Arc<RwLock<u32>>) -> Player {
+               round_info: Arc<RwLock<RoundInfo>>) -> Player {
         Player {
             thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier, round_info)),
             points: 0,
@@ -28,17 +28,21 @@ impl Player {
                  card_sender: Sender<PlayerCard>,
                  mut my_cards: Vec<FrenchCard>,
                  barrier: Arc<Barrier>,
-                 round_info: Arc<RwLock<u32>>) -> thread::JoinHandle<()> {
+                 round_info: Arc<RwLock<RoundInfo>>) -> thread::JoinHandle<()> {
         let thread_handler = thread::spawn(move || {
             loop {
                 println!("{}", format!("[Player {}] waiting to start round", id).dimmed().red());
                 let barrier_wait_result = barrier.wait().is_leader();
 
                 let round_info_res = round_info.read().unwrap();
-                println!("{}", *round_info_res);
-                if *round_info_res == 99 {
+                if (*round_info_res).game_ended {
                     println!("end of game reached in player");
                     break;
+                }
+
+                /* skip round if I put the last card in prev. round, which was rustic */
+                if (*round_info_res).there_are_forbidden_players && (*round_info_res).forbidden_player_id == id {
+                    continue;
                 }
 
                 let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
