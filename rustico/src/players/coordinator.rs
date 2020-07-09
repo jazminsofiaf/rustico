@@ -9,6 +9,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
 use crate::players::round_type::round_type::RoundType::{RUSTIC};
 use crate::game::round::Round;
+use std::borrow::Borrow;
 
 
 pub struct PlayerCard {
@@ -35,7 +36,7 @@ impl Coordinator {
         /* to sync start of round */
         let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
-        let round = Round::new(Option::None,  false);
+        let round = Round::new(Option::None,  false, Option::None, );
         let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
         let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
@@ -94,7 +95,7 @@ impl Coordinator {
 
         let deck: Vec<FrenchCard> = self.shuffle_deck();
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
-        let players: Vec<Player> = self.deal_cards_between_players(deck);
+        let mut players: Vec<Player> = self.deal_cards_between_players(deck);
 
         for this_round in 0..number_of_rounds {
             let round_type = self.get_round_type();
@@ -120,6 +121,8 @@ impl Coordinator {
 
             // TODO computo puntaje.
 
+
+
             println!("{}", "End of round.".bright_red());
 
             /* this update occurs here because it is relevant for the next round, but it must be
@@ -134,6 +137,7 @@ impl Coordinator {
                     (*round_info_write_guard).forbidden_player_id = Option::None;
                 }
             }
+            players = self.compute_score(round_type,hand, players);
         }
         self.end_game(players);
 
@@ -152,11 +156,11 @@ impl Coordinator {
 
         /* wait for all threads for nice program termination */
         for player in players.iter_mut() {
+            println!("player id: {} POINTS = {}",player.get_id(), player.get_points());
             player.wait();
         }
 
         println!("game ends");
-        //     TODO Print leaderboard.
 
     }
 
