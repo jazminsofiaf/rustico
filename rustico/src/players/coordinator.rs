@@ -1,12 +1,14 @@
 use crate::players::round_type::round_type::RoundType;
 use rand::{Rng, thread_rng};
 use crate::players::player::Player;
+
 use crate::card::french_card::{get_card_dec, FrenchCard};
 use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, mpsc, RwLock};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
 use crate::players::round_type::round_type::RoundType::{RUSTIC};
+use crate::game::round::Round;
 
 
 pub struct PlayerCard {
@@ -15,34 +17,26 @@ pub struct PlayerCard {
 }
 
 const TEN_POINTS: i32 = 10;
+const ONE_POINT: i32 = 1;
+const FIVE_POINTS: i32 = 5;
 
 pub struct Coordinator {
     number_of_players: i32,
     start_of_round_barrier: Arc<Barrier>,
     card_sender: Sender<PlayerCard>,
     card_receiver: Receiver<PlayerCard>,
-    round_info: Arc<RwLock<RoundInfo>>,
+    round_info: Arc<RwLock<Round>>,
 }
 
-pub struct RoundInfo {
-    pub(crate) forbidden_player_id: i32,
-    pub(crate) there_are_forbidden_players: bool,
-    pub(crate) game_ended: bool,
-}
+
 
 impl Coordinator {
     pub fn new(number_of_players: i32) -> Coordinator {
         /* to sync start of round */
         let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
-        let round_info = RoundInfo {
-            forbidden_player_id: 0,
-            there_are_forbidden_players: false,
-            game_ended: false,
-        };
-        let round_info: Arc<RwLock<RoundInfo>> = Arc::new(RwLock::new(round_info));
-
-        let (card_sender, card_receiver) = mpsc::channel::<PlayerCard>();
+        let round = Round::new(Option::None,  false);
+        let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
         let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
 
@@ -100,29 +94,27 @@ impl Coordinator {
 
         let deck: Vec<FrenchCard> = self.shuffle_deck();
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
-        let mut players: Vec<Player> = self.deal_cards_between_players(deck);
+        let players: Vec<Player> = self.deal_cards_between_players(deck);
 
         for this_round in 0..number_of_rounds {
             let round_type = self.get_round_type();
 
             println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_type).bright_blue());
-
-            {
-                let mut w = self.round_info.write().unwrap();
-                // TODO actualizar con id correspondiente en caso que un jugador haya llegado ultimo
-                (*w).forbidden_player_id = 50;
-            }
-
             println!("from coord. 'bout to start round");
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
             println!("{} from coord.", barrier_wait_result);
 
             let mut hand = Vec::new();
 
-            for player in players.iter()  {
+
+            let round_len = match self.round_info.read().unwrap().forbidden_player_id {
+                Some(_) => { players.len() - 1 }
+                _ => { players.len() }
+            };
+
+            for _ in 0..round_len {
                 let player_card: PlayerCard = self.card_receiver.recv().expect("No more cards");
                 println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
-
                 hand.push(player_card);
             }
 
@@ -132,18 +124,29 @@ impl Coordinator {
 
             /* this update occurs here because it is relevant for the next round, but it must be
              * computed with this round's values
-             * */
-            if round_type == RUSTIC {
-                let mut w = self.round_info.write().unwrap();
-                (*w).there_are_forbidden_players = true;
+             */
+            let mut  round_info_write_guard= self.round_info.write().unwrap();
+            match round_type {
+                RUSTIC => {
+                    (*round_info_write_guard).forbidden_player_id = Some(hand.last().unwrap().player_id);
+                }
+                _ => {
+                    (*round_info_write_guard).forbidden_player_id = Option::None;
+                }
             }
         }
+        self.end_game(players);
 
+
+
+    }
+
+    fn end_game(&self, mut players: Vec<Player>){
 
         /* signal end of game and enable one more round so players can read updated status */
         {
-            let mut w = self.round_info.write().unwrap();
-            (*w).game_ended = true;
+            let mut round_info_write_guard = self.round_info.write().unwrap();
+            (*round_info_write_guard).game_ended = true;
             self.start_of_round_barrier.wait();
         }
 
@@ -154,9 +157,10 @@ impl Coordinator {
 
         println!("game ends");
         //     TODO Print leaderboard.
+
     }
 
-    pub fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
+    pub fn compute_score(&self,round_type: RoundType ,hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
         let winner_response = hand.iter()
             .max_by(|one, other| one.card.cmp(&other.card))
             .unwrap();
@@ -170,6 +174,16 @@ impl Coordinator {
             println!("sending points {}, {}", winner_card.player_id, winner_card.card);
             players[winner_card.player_id as usize].win_points(points);
         }
+
+        match round_type {
+            RUSTIC => {
+                players[hand.first().unwrap().player_id as usize].win_points(ONE_POINT);
+                players[hand.last().unwrap().player_id as usize].lose_points(FIVE_POINTS);
+            }
+            _ => {}
+        }
         return players;
+
+
     }
 }
