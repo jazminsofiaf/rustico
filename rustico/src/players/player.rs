@@ -3,10 +3,10 @@ use std::sync::mpsc::{Sender, Receiver};
 use std::sync::{Arc, Barrier, RwLock, Mutex, Condvar};
 use crate::card::french_card::FrenchCard;
 use crate::players::coordinator::PlayerCard;
-use colored::Colorize;
 use crate::game::round::Round;
-use std::borrow::Borrow;
 use crate::players::round_type::round_type::RoundType;
+use crate::players::player_game::PlayerGame;
+use colored::Colorize;
 
 
 pub struct Player {
@@ -43,107 +43,12 @@ impl Player {
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
                  next_turn: Arc<(Mutex<bool>, Condvar)>,
                  round_info: Arc<RwLock<Round>>) -> thread::JoinHandle<()> {
+
         let thread_handler = thread::spawn(move || {
-            loop {
-                println!("{}", format!("[Player {}] waiting to start round", id).dimmed().red());
-                let barrier_wait_result = barrier.wait().is_leader();
-                println!("[Player {}]  barrier_wait_result {} ", id, barrier_wait_result);
-
-                let round_info_res = round_info.read().unwrap();
-                if (*round_info_res).game_ended {
-                    println!("end of game reached in player");
-                    break;
-                }
-
-
-                match (*round_info_res).round_type {
-                    RoundType::NORMAL =>   {
-
-                        // Wait for this turn to start------------------------------
-                        let (lock, cvar) = &*my_turn;
-                        let mut is_my_turn = lock.lock().unwrap();
-                        println!("[player {}]ya es mi turno? {}", id, is_my_turn);
-                        while !*is_my_turn {
-                            is_my_turn = cvar.wait(is_my_turn).unwrap();
-                        }
-                        //reinicio para las proximas rondas
-                        *is_my_turn = false;
-                        // Wait for this turn to start------------------------------
-
-
-                        //-skip------------------------------------------------------------------------------------------
-                        /* skip round if I put the last card in prev. round, which was rustic */
-                        match (*round_info_res).forbidden_player_id {
-                            Some(forbidden_player_id) if forbidden_player_id == id =>   {
-                                println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", id).dimmed().bright_magenta());
-
-                                // My turn end ---------------------------------------
-                                let (lock, cvar) = &*next_turn;
-                                let mut my_turn_end = lock.lock().unwrap();
-                                *my_turn_end = true;
-                                // We notify the condvar that the next turn has started.
-                                cvar.notify_all();
-                                // My turn end ---------------------------------------
-
-
-                                continue;
-
-                            }
-                            _ => {}
-                        }
-                        //-skip------------------------------------------------------------------------------------------
-
-
-                        //play -------------------------------------------------------------------------------------
-                        let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
-                        println!("{}", format!("[Player {}] sending card {}", id, first_card).bright_magenta());
-                        let card_to_send = PlayerCard {
-                            player_id: id,
-                            card: first_card,
-                        };
-                        card_sender.send(card_to_send).unwrap();
-                        //play ---------------------------------------------------------------------------------------
-
-
-                        // My turn end ---------------------------------------
-                        let (lock, cvar) = &*next_turn;
-                        let mut my_turn_end = lock.lock().unwrap();
-                        *my_turn_end = true;
-                        // We notify the condvar that the next turn has started.
-                        cvar.notify_all();
-                        // My turn end ---------------------------------------
-
-                    }
-
-                    //RUSTICOOOOOO
-                    _ => {
-
-                        //-skip -----------------------------------------------------------------------------------------
-                        /* skip round if I put the last card in prev. round, which was rustic */
-                        match (*round_info_res).forbidden_player_id {
-                            Some(forbidden_player_id) if forbidden_player_id == id =>   {
-                                println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", id).dimmed().bright_magenta());
-                                continue;
-                            }
-                            _ => {}
-                        }
-                        //-skip ------------------------------------------------------------------------------------------
-
-
-                        //play -------------------------------------------------------------------------------------
-                        let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
-                        println!("{}", format!("[Player {}] sending card {}", id, first_card).bright_magenta());
-                        let card_to_send = PlayerCard {
-                            player_id: id,
-                            card: first_card,
-                        };
-                        card_sender.send(card_to_send).unwrap();
-                        //play ---------------------------------------------------------------------------------------
-                    }
-                }
-
-            }
+            let mut player_game = PlayerGame::new(id, card_sender, my_cards, barrier, my_turn, next_turn, round_info);
+            player_game.init();
         });
+
         return thread_handler;
     }
 
