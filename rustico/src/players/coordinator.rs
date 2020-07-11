@@ -1,5 +1,3 @@
-use crate::players::round_type::round_type::RoundType;
-use rand::{Rng, thread_rng};
 use crate::players::player::Player;
 
 use crate::card::french_card::{get_card_dec, FrenchCard};
@@ -7,9 +5,9 @@ use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, mpsc, RwLock, Mutex, Condvar};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
-use crate::players::round_type::round_type::RoundType::{RUSTIC, NORMAL};
 use crate::game::round::Round;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::Borrow;
+use rand::thread_rng;
 
 
 pub struct PlayerCard {
@@ -17,9 +15,7 @@ pub struct PlayerCard {
     pub card: FrenchCard,
 }
 
-const TEN_POINTS: i32 = 10;
-const ONE_POINT: i32 = 1;
-const FIVE_POINTS: i32 = 5;
+
 
 pub struct Coordinator {
     number_of_players: i32,
@@ -46,11 +42,6 @@ impl Coordinator {
         };
     }
 
-    pub fn get_round_type(&self) -> RoundType {
-        let mut rng = rand::thread_rng();
-        let round_type: RoundType = rng.gen();
-        return round_type;
-    }
 
     pub fn shuffle_deck(&self) -> Vec<FrenchCard> {
         println!("coordinator shuffling cards");
@@ -99,19 +90,17 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let mut round_type = self.get_round_type();
-        let round = Round::new(round_type, Option::None, false);
-        let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
+        let round = Round::new(self.number_of_players, Option::None, false);
+        let round_lock: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
-        let mut turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
-        let mut turn_coordinator =turn_to_wait.clone();
-        let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_info.borrow(), turn_to_wait);
+        let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
+        let turn_coordinator =turn_to_wait.clone();
+        let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_lock.borrow(), turn_to_wait);
 
-        let mut round_len =  players.len();
 
         for this_round in 0..number_of_rounds {
 
-            println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_type).bright_blue());
+            println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_lock.read().unwrap().round_type).bright_blue());
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
             println!("[Coordinator] barrier result: {}", barrier_wait_result);
 
@@ -121,42 +110,28 @@ impl Coordinator {
 
             let mut hand = Vec::new();
 
-            for _ in 0..round_len {
+            for _ in 0..round_lock.read().unwrap().len {
                 let player_card: PlayerCard = self.card_receiver.recv().expect("No more cards");
                 println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
                 hand.push(player_card);
             }
 
             println!("{}", "End of round.".bright_red());
-
-
-            /* this update occurs here because it is relevant for the next round, but it must be
-             * computed with this round's values
-             */
-            let next_round_type = self.get_round_type();
-            let mut  round_info_write_guard= round_info.write().unwrap();
-            match round_type {
-                RUSTIC => {
-                    let next_round = Round::new(next_round_type, Some(hand.last().unwrap().player_id), false);
-                    (*round_info_write_guard) = next_round;
-                    round_len = players.len() - 1;
-
-                }
-                NORMAL => {
-                    let next_round = Round::new(next_round_type, Option::None, false);
-                    (*round_info_write_guard) = next_round;
-
-                    round_len = players.len();
-                }
+            {
+                //this update occurs here because it is relevant for the next round, but it must be computed with this round's values
+                let mut round_info_write_guard = round_lock.write().unwrap();
+                (*round_info_write_guard) = round_info_write_guard.get_next_round(self.number_of_players, hand.last().unwrap().player_id);
+                //ends of block free lock
             }
 
-            players = self.compute_score(round_type,hand, players);
-            round_type = next_round_type;
+            players = round_lock.read().unwrap().compute_score( hand, players);
 
         }
-        self.end_game(players,round_info );
+        self.end_game(players, round_lock);
 
     }
+
+
 
     fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {
         let (lock, cvar) = turn_coordinator;
@@ -167,13 +142,13 @@ impl Coordinator {
         cvar.notify_one();
     }
 
-    fn end_game(&self, mut players: Vec<Player>, round_info: Arc<RwLock<Round>>){
-
-        /* signal end of game and enable one more round so players can read updated status */
+    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Round>>){
         {
-            let mut round_info_write_guard = round_info.write().unwrap();
+            /* signal end of game and enable one more round so players can read updated status */
+            let mut round_info_write_guard = round_lock.write().unwrap();
             (*round_info_write_guard).game_ended = true;
             self.start_of_round_barrier.wait();
+            //ends of block free lock
         }
 
         /* wait for all threads for nice program termination */
@@ -181,34 +156,9 @@ impl Coordinator {
             println!("player id: {} POINTS = {}",player.get_id(), player.get_points());
             player.wait();
         }
-
         println!("game ends");
 
     }
 
-    pub fn compute_score(&self,round_type: RoundType ,hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
-        let winner_response = hand.iter()
-            .max_by(|one, other| one.card.cmp(&other.card))
-            .unwrap();
-        let draw = hand.iter()
-            .filter(|response| !(response.card < winner_response.card)).collect::<Vec<_>>();
 
-        let points = TEN_POINTS / draw.len() as i32;
-        println!("sending points {}", points);
-
-        for winner_card in draw {
-            println!("sending points {}, {}", winner_card.player_id, winner_card.card);
-            players[winner_card.player_id as usize].win_points(points);
-        }
-
-        match round_type {
-            RUSTIC => {
-                players[hand.first().unwrap().player_id as usize].win_points(ONE_POINT);
-                players[hand.last().unwrap().player_id as usize].lose_points(FIVE_POINTS);
-            }
-            _ => {}
-        }
-        return players;
-
-    }
 }

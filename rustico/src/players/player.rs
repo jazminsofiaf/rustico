@@ -1,12 +1,10 @@
 use std::thread;
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Barrier, RwLock, Mutex, Condvar};
 use crate::card::french_card::FrenchCard;
 use crate::players::coordinator::PlayerCard;
 use crate::game::round::Round;
-use crate::players::round_type::round_type::RoundType;
 use crate::players::player_game::PlayerGame;
-use colored::Colorize;
 
 
 pub struct Player {
@@ -38,7 +36,7 @@ impl Player {
 
     fn init_play(id: i32,
                  card_sender: Sender<PlayerCard>,
-                 mut my_cards: Vec<FrenchCard>,
+                 my_cards: Vec<FrenchCard>,
                  barrier: Arc<Barrier>,
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
                  next_turn: Arc<(Mutex<bool>, Condvar)>,
