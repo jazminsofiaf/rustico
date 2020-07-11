@@ -20,8 +20,8 @@ pub struct PlayerCard {
 pub struct Coordinator {
     number_of_players: i32,
     start_of_round_barrier: Arc<Barrier>,
-    card_sender: Sender<PlayerCard>,
-    card_receiver: Receiver<PlayerCard>,
+    card_sender: Sender<Option<PlayerCard>>,
+    card_receiver: Receiver<Option<PlayerCard>>,
 }
 
 
@@ -31,8 +31,7 @@ impl Coordinator {
         /* to sync start of round */
         let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
-        let (card_sender , card_receiver) = mpsc::channel::<PlayerCard>();
-
+        let (card_sender , card_receiver) = mpsc::channel::<Option<PlayerCard>>();
 
         return Coordinator {
             number_of_players,
@@ -99,22 +98,26 @@ impl Coordinator {
 
 
         for this_round in 0..number_of_rounds {
-
             println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_lock.read().unwrap().round_type).bright_blue());
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
             println!("[Coordinator] barrier result: {}", barrier_wait_result);
 
-
             self.notify_first_turn_start(&*turn_coordinator);
-
 
             let mut hand = Vec::new();
 
-            for _ in 0..round_lock.read().unwrap().len {
-                let player_card: PlayerCard = self.card_receiver.recv().expect("No more cards");
-                println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
-                hand.push(player_card);
+            for _ in 0..self.number_of_players {
+                let mybe_player_card: Option<PlayerCard> = self.card_receiver.recv().expect("No more cards");
+                match mybe_player_card{
+                    Some(player_card) => {
+                        println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
+                        hand.push(player_card);
+                    }
+                    _ => {}
+                }
+
             }
+
 
             println!("{}", "End of round.".bright_red());
             {

@@ -15,7 +15,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(id: i32,
-               card_sender: Sender<PlayerCard>,
+               card_sender: Sender<Option<PlayerCard>>,
                cards: Vec<FrenchCard>,
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
@@ -35,7 +35,7 @@ impl Player {
 
 
     fn init_play(id: i32,
-                 card_sender: Sender<PlayerCard>,
+                 card_sender: Sender<Option<PlayerCard>>,
                  my_cards: Vec<FrenchCard>,
                  barrier: Arc<Barrier>,
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
