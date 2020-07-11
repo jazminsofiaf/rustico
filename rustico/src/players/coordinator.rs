@@ -51,7 +51,7 @@ impl Coordinator {
     }
 
 
-    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>, round_info: &Arc<RwLock<Round>>, mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
+    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>, round_info: &Arc<RwLock<dyn Round>>, mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();
@@ -83,6 +83,9 @@ impl Coordinator {
     }
 
 
+
+
+
     pub fn let_the_game_begin(&mut self) {
         println!("{}", "Let the game begin!".bright_white());
 
@@ -90,8 +93,8 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let round = Round::new(self.number_of_players, Option::None, false);
-        let round_lock: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
+        let round = Round::get_random_type_round(self.number_of_players);
+        let round_lock: Arc<RwLock<dyn Round>> = Arc::new(RwLock::new(round));
 
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
         let turn_coordinator =turn_to_wait.clone();
@@ -142,7 +145,7 @@ impl Coordinator {
         cvar.notify_one();
     }
 
-    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Round>>){
+    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<dyn Round>>){
         {
             /* signal end of game and enable one more round so players can read updated status */
             let mut round_info_write_guard = round_lock.write().unwrap();

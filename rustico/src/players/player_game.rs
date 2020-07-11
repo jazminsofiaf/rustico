@@ -3,9 +3,8 @@ use std::sync::{Barrier, Arc, Mutex, Condvar, RwLock};
 use crate::card::french_card::FrenchCard;
 use crate::players::coordinator::PlayerCard;
 use crate::game::round::Round;
-use crate::players::round_type::round_type::RoundType;
 use colored::Colorize;
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::Borrow;
 
 pub struct PlayerGame{
     id: i32,
@@ -14,7 +13,7 @@ pub struct PlayerGame{
     start_of_round_barrier: Arc<Barrier>,
     my_turn: Arc<(Mutex<bool>, Condvar)>,
     next_turn: Arc<(Mutex<bool>, Condvar)>,
-    round_lock: Arc<RwLock<Round>>
+    round_lock: Arc<RwLock<dyn Round>>
 }
 
 impl PlayerGame {
@@ -25,7 +24,7 @@ impl PlayerGame {
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
                next_turn: Arc<(Mutex<bool>, Condvar)>,
-               round_info: Arc<RwLock<Round>>) -> PlayerGame {
+               round_info: Arc<RwLock<dyn Round>>) -> PlayerGame {
         PlayerGame {
             id,
             card_sender,

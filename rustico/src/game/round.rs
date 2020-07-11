@@ -3,90 +3,73 @@ use crate::players::coordinator::PlayerCard;
 use crate::players::player::Player;
 use rand::Rng;
 use crate::players::player_game::PlayerGame;
+use crate::game::normal_round::NormalRound;
+use crate::game::rustic_round::RusticRound;
 
 
 const TEN_POINTS: i32 = 10;
-const ONE_POINT: i32 = 1;
-const FIVE_POINTS: i32 = 5;
-
-pub struct Round {
-    pub round_type : RoundType,
-    pub len: i32,
-    pub forbidden_player_id: Option<i32>,
-    pub game_ended: bool,
-
-}
 
 
-impl Round  {
-    pub fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> Round {
-        Round {
-            round_type: Round::get_round_type(),
-            len,
-            forbidden_player_id,
-            game_ended,
-        }
-    }
+pub trait Round{
 
-    pub fn get_round_type() -> RoundType {
+
+    fn get_random_type_round(len: i32)-> Box<dyn Round> {
         let mut rng = rand::thread_rng();
         let round_type: RoundType = rng.gen();
-        return round_type;
-    }
-
-    pub fn wait_turn(&self, player: &PlayerGame){
-        match self.round_type {
+        return match round_type {
             RoundType::NORMAL => {
-                player.wait_my_turn();
+                Box::new(NormalRound::new(len, Option::None, false))
             }
-            _ => {}
+            RoundType::RUSTIC =>{
+                Box::new(RusticRound::new(len, Option::None, false))
+            }
         }
+
+    }
+    //fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> Self;
+
+
+    fn get_next_round(&self, number_of_players:i32, last_player_id: i32)-> Box<dyn Round> {
+        let mut rng = rand::thread_rng();
+        let round_type: RoundType = rng.gen();
+        return match round_type {
+            RoundType::NORMAL =>{
+                Box::new(self.get_next_normal_round(number_of_players, last_player_id))
+            }
+            RoundType::RUSTIC =>{
+                Box::new(self.get_next_rustic_round(number_of_players, last_player_id))
+            }
+        }
+
     }
 
-    pub fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
+    fn get_next_rustic_round(&self, number_of_players:i32, last_player_id: i32)-> RusticRound;
+
+    fn get_next_normal_round(&self, number_of_players:i32, last_player_id: i32)-> NormalRound;
+
+
+    fn wait_turn(&self, player: &PlayerGame){
+        //default do nothing
+    }
+
+    fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
         match self.forbidden_player_id {
             Some(forbidden_id) if forbidden_id == player.get_id() =>   {
-                match self.round_type {
-                    RoundType::NORMAL => {
-                        player.notify_next_player_turn();
-                    }
-                    _ => {}
-                }
                 return true;
             }
             _ => {}
         }
         return false;
-
     }
 
-    pub fn end_turn(&self, player: &PlayerGame){
-        match self.round_type {
-            RoundType::NORMAL => {
-                player.notify_next_player_turn();
-            }
-
-            _ => {}
-        }
+    fn end_turn(&self, player: &PlayerGame){
+        //default do nothing
     }
 
 
 
-    pub fn get_next_round(&self, number_of_players:i32, last_player_id: i32)-> Round{
-        return match self.round_type {
-            RoundType::RUSTIC => {
-                let round_len = number_of_players - 1;
-                Round::new( round_len, Some(last_player_id), false)
-            }
-            RoundType::NORMAL => {
-                let round_len = number_of_players;
-                Round::new(round_len,  Option::None, false)
-            }
-        }
-    }
 
-
-    pub fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
+    fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
         let winner_response = hand.iter()
             .max_by(|one, other| one.card.cmp(&other.card))
             .unwrap();
@@ -100,16 +83,7 @@ impl Round  {
             println!("sending points {}, {}", winner_card.player_id, winner_card.card);
             players[winner_card.player_id as usize].win_points(points);
         }
-
-        match self.round_type {
-            RoundType::RUSTIC => {
-                players[hand.first().unwrap().player_id as usize].win_points(ONE_POINT);
-                players[hand.last().unwrap().player_id as usize].lose_points(FIVE_POINTS);
-            }
-            _ => {}
-        }
         return players;
     }
-
 
 }
