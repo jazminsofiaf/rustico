@@ -124,6 +124,21 @@ impl Coordinator {
 
             players = round_lock.read().unwrap().compute_score(hand, players);
         }
+
+        self.end_game(players, round_lock);
+    }
+
+
+    fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {
+        let (lock, cvar) = turn_coordinator;
+        let mut started = lock.lock().unwrap();
+        *started = true;
+        // We notify the condvar that the value has changed.
+        println!("notificamos que empieza el juego");
+        cvar.notify_one();
+    }
+
+    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Round>>) {
         {
             println!("write round lock");
             /* signal end of game and enable one more round so players can read updated status */
@@ -140,21 +155,6 @@ impl Coordinator {
             println!("free round round lock");
         }
         self.start_of_round_barrier.wait();
-
-        self.end_game(players, round_lock);
-    }
-
-
-    fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {
-        let (lock, cvar) = turn_coordinator;
-        let mut started = lock.lock().unwrap();
-        *started = true;
-        // We notify the condvar that the value has changed.
-        println!("notificamos que empieza el juego");
-        cvar.notify_one();
-    }
-
-    fn end_game(&self, mut players: Vec<Player>, _round_lock: Arc<RwLock<Round>>) {
         /* wait for all threads for nice program termination */
         for player in players.iter_mut() {
             println!("player id: {} POINTS = {}", player.get_id(), player.get_points());
