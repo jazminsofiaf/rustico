@@ -89,7 +89,7 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let round = Round::new(self.number_of_players, Option::None, false);
+        let round = Round::new( Option::None, false);
         let round_lock: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
@@ -107,8 +107,8 @@ impl Coordinator {
             let mut hand = Vec::new();
 
             for _ in 0..self.number_of_players {
-                let mybe_player_card: Option<PlayerCard> = self.card_receiver.recv().expect("No more cards");
-                match mybe_player_card{
+                let maybe_player_card: Option<PlayerCard> = self.card_receiver.recv().expect("No more cards");
+                match maybe_player_card {
                     Some(player_card) => {
                         println!("receiving card: {} from player {}",player_card.card, player_card.player_id);
                         hand.push(player_card);
@@ -118,12 +118,11 @@ impl Coordinator {
 
             }
 
-
             println!("{}", "End of round.".bright_red());
             {
                 //this update occurs here because it is relevant for the next round, but it must be computed with this round's values
                 let mut round_info_write_guard = round_lock.write().unwrap();
-                (*round_info_write_guard) = round_info_write_guard.get_next_round(self.number_of_players, hand.last().unwrap().player_id);
+                (*round_info_write_guard) = round_info_write_guard.get_next_round(hand.last().unwrap().player_id);
                 //ends of block free lock
             }
 

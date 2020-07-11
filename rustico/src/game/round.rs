@@ -11,7 +11,6 @@ const FIVE_POINTS: i32 = 5;
 
 pub struct Round {
     pub round_type : RoundType,
-    pub len: i32,
     pub forbidden_player_id: Option<i32>,
     pub game_ended: bool,
 
@@ -19,10 +18,9 @@ pub struct Round {
 
 
 impl Round  {
-    pub fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> Round {
+    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> Round {
         Round {
             round_type: Round::get_round_type(),
-            len,
             forbidden_player_id,
             game_ended,
         }
@@ -72,15 +70,13 @@ impl Round  {
 
 
 
-    pub fn get_next_round(&self, number_of_players:i32, last_player_id: i32)-> Round{
+    pub fn get_next_round(&self, last_player_id: i32)-> Round{
         return match self.round_type {
             RoundType::RUSTIC => {
-                let round_len = number_of_players - 1;
-                Round::new( round_len, Some(last_player_id), false)
+                Round::new(  Some(last_player_id), false)
             }
             RoundType::NORMAL => {
-                let round_len = number_of_players;
-                Round::new(round_len,  Option::None, false)
+                Round::new( Option::None, false)
             }
         }
     }
