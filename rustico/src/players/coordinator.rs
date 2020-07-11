@@ -105,12 +105,11 @@ impl Coordinator {
         let mut round_type = self.get_round_type();
 
         let round = Round::new(round_type, Option::None, false);
-
         let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
 
         let mut turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
-        let turn_coordinator =turn_to_wait.clone();
+        let mut turn_coordinator =turn_to_wait.clone();
 
         let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_info.borrow(), turn_to_wait);
 
@@ -126,14 +125,15 @@ impl Coordinator {
             println!("{} from coord.", barrier_wait_result);
 
 
-            {
+           /* {
                 let (lock, cvar) = &*turn_coordinator;
                 let mut started = lock.lock().unwrap();
                 *started = true;
                 // We notify the condvar that the value has changed.
                 println!("notificamos que empieza el juego");
                 cvar.notify_one();
-            }
+            }*/
+            self.notify_first_turn_start(&*turn_coordinator);
 
 
 
@@ -160,7 +160,7 @@ impl Coordinator {
                     round_len = players.len() - 1;
 
                 }
-                _ => {
+                NORMAL => {
                     (*round_info_write_guard).forbidden_player_id = Option::None;
                     (*round_info_write_guard).round_type = next_round_type;
                     round_len = players.len();
@@ -173,8 +173,15 @@ impl Coordinator {
         }
         self.end_game(players,round_info );
 
+    }
 
-
+    fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {
+        let (lock, cvar) = turn_coordinator;
+        let mut started = lock.lock().unwrap();
+        *started = true;
+        // We notify the condvar that the value has changed.
+        println!("notificamos que empieza el juego");
+        cvar.notify_one();
     }
 
     fn end_game(&self, mut players: Vec<Player>, round_info: Arc<RwLock<Round>>){
@@ -219,7 +226,6 @@ impl Coordinator {
             _ => {}
         }
         return players;
-
 
     }
 }
