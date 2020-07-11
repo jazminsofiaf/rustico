@@ -16,7 +16,6 @@ pub struct Round {
 
 }
 
-
 impl Round  {
     pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> Round {
         Round {
@@ -90,10 +89,9 @@ impl Round  {
             .filter(|response| !(response.card < winner_response.card)).collect::<Vec<_>>();
 
         let points = TEN_POINTS / draw.len() as i32;
-        println!("sending points {}", points);
 
         for winner_card in draw {
-            println!("sending points {}, {}", winner_card.player_id, winner_card.card);
+            println!("sending points {} to player {} who send higher card : {}", points, winner_card.player_id, winner_card.card);
             players[winner_card.player_id as usize].win_points(points);
         }
 

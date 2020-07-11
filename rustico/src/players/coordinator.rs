@@ -93,7 +93,7 @@ impl Coordinator {
         let round_lock: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
-        let turn_coordinator =turn_to_wait.clone();
+        let turn_coordinator = turn_to_wait.clone();
         let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_lock.borrow(), turn_to_wait);
 
 
@@ -146,11 +146,13 @@ impl Coordinator {
 
     fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Round>>){
         {
+            println!("write round lock");
             /* signal end of game and enable one more round so players can read updated status */
             let mut round_info_write_guard = round_lock.write().unwrap();
             (*round_info_write_guard).game_ended = true;
             self.start_of_round_barrier.wait();
             //ends of block free lock
+            println!("free round round lock");
         }
 
         /* wait for all threads for nice program termination */
