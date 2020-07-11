@@ -42,7 +42,10 @@ impl PlayerGame {
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
             println!("[Player {}] barrier result {} ", self.id, barrier_wait_result);
 
-            if self.round_lock.read().unwrap().game_ended {
+            let has_ended = self.round_lock.read().unwrap().game_ended;
+            println!("game ended? {}", has_ended);
+            if has_ended {
+                println!("[Player {}] sabe que terminamos!", self.id);
                 break;
             }
 
@@ -53,6 +56,7 @@ impl PlayerGame {
                 continue;
             }
             self.play_this_round();
+            println!("EXPECTING YOU HERE! (player {})", self.id);
             self.round_lock.read().unwrap().end_turn(self.borrow());
         }
     }
@@ -78,7 +82,7 @@ impl PlayerGame {
         let mut my_turn_end = lock.lock().unwrap();
         *my_turn_end = true;
         // We notify the condvar that the next turn has started.
-        cvar.notify_all();
+        cvar.notify_one();
     }
 
     pub fn play_this_round(&mut self){
@@ -88,7 +92,9 @@ impl PlayerGame {
             player_id: self.id,
             card: first_card,
         };
+        println!("{}", format!("[Player {}] just before sending card", self.id).bright_magenta());
         self.card_sender.send(Some(card_to_send)).unwrap();
+        println!("{}", format!("[Player {}] just after sending card", self.id).bright_magenta());
     }
 
 }

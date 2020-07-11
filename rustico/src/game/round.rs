@@ -60,10 +60,11 @@ impl Round  {
     pub fn end_turn(&self, player: &PlayerGame){
         match self.round_type {
             RoundType::NORMAL => {
+                println!("[player {}] en end turn NORMAL", player.get_id());
                 player.notify_next_player_turn();
             }
 
-            _ => {}
+            _ => {println!("[player {}] en end turn RUST", player.get_id());}
         }
     }
 

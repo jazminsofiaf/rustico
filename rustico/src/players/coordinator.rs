@@ -129,6 +129,23 @@ impl Coordinator {
             players = round_lock.read().unwrap().compute_score( hand, players);
 
         }
+        {
+            println!("write round lock");
+            /* signal end of game and enable one more round so players can read updated status */
+            let mut round_info_write_guard = round_lock.write().unwrap();
+            println!("sarasa1");
+            let round = Round::new( Option::None, true);
+            *round_info_write_guard = round;
+            // (*round_info_write_guard).game_ended = true;
+            println!("has ended? from coord {}", (*round_info_write_guard).game_ended);
+            println!("sarasa2");
+            // self.notify_first_turn_start(&*turn_coordinator);
+            println!("sarasa3");
+            //ends of block free lock
+            println!("free round round lock");
+        }
+        self.start_of_round_barrier.wait();
+
         self.end_game(players, round_lock);
 
     }
@@ -145,15 +162,6 @@ impl Coordinator {
     }
 
     fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Round>>){
-        {
-            println!("write round lock");
-            /* signal end of game and enable one more round so players can read updated status */
-            let mut round_info_write_guard = round_lock.write().unwrap();
-            (*round_info_write_guard).game_ended = true;
-            self.start_of_round_barrier.wait();
-            //ends of block free lock
-            println!("free round round lock");
-        }
 
         /* wait for all threads for nice program termination */
         for player in players.iter_mut() {
