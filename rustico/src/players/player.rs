@@ -59,30 +59,31 @@ impl Player {
                 match (*round_info_res).round_type {
                     RoundType::NORMAL =>   {
 
-                        // Wait for this turn to start
+                        // Wait for this turn to start------------------------------
                         let (lock, cvar) = &*my_turn;
-                        let mut started = lock.lock().unwrap();
-                        println!("[player {}]ya es mi turno? {}", id, started);
-                        while !*started {
-                            started = cvar.wait(started).unwrap();
+                        let mut is_my_turn = lock.lock().unwrap();
+                        println!("[player {}]ya es mi turno? {}", id, is_my_turn);
+                        while !*is_my_turn {
+                            is_my_turn = cvar.wait(is_my_turn).unwrap();
                         }
-
                         //reinicio para las proximas rondas
-                        *started = false;
+                        *is_my_turn = false;
+                        // Wait for this turn to start------------------------------
 
 
+                        //-skip------------------------------------------------------------------------------------------
                         /* skip round if I put the last card in prev. round, which was rustic */
                         match (*round_info_res).forbidden_player_id {
                             Some(forbidden_player_id) if forbidden_player_id == id =>   {
                                 println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", id).dimmed().bright_magenta());
 
-                                // My turn end
-
+                                // My turn end ---------------------------------------
                                 let (lock, cvar) = &*next_turn;
-                                let mut started = lock.lock().unwrap();
-                                *started = true;
+                                let mut my_turn_end = lock.lock().unwrap();
+                                *my_turn_end = true;
                                 // We notify the condvar that the next turn has started.
                                 cvar.notify_all();
+                                // My turn end ---------------------------------------
 
 
                                 continue;
@@ -90,8 +91,10 @@ impl Player {
                             }
                             _ => {}
                         }
+                        //-skip------------------------------------------------------------------------------------------
 
 
+                        //play -------------------------------------------------------------------------------------
                         let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
                         println!("{}", format!("[Player {}] sending card {}", id, first_card).bright_magenta());
                         let card_to_send = PlayerCard {
@@ -99,31 +102,35 @@ impl Player {
                             card: first_card,
                         };
                         card_sender.send(card_to_send).unwrap();
+                        //play ---------------------------------------------------------------------------------------
+
+
+                        // My turn end ---------------------------------------
+                        let (lock, cvar) = &*next_turn;
+                        let mut my_turn_end = lock.lock().unwrap();
+                        *my_turn_end = true;
+                        // We notify the condvar that the next turn has started.
+                        cvar.notify_all();
+                        // My turn end ---------------------------------------
 
                     }
+
+                    //RUSTICOOOOOO
                     _ => {
 
+                        //-skip -----------------------------------------------------------------------------------------
                         /* skip round if I put the last card in prev. round, which was rustic */
                         match (*round_info_res).forbidden_player_id {
                             Some(forbidden_player_id) if forbidden_player_id == id =>   {
                                 println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", id).dimmed().bright_magenta());
-
-                                // My turn end
-
-                                let (lock, cvar) = &*next_turn;
-                                let mut started = lock.lock().unwrap();
-                                *started = true;
-                                // We notify the condvar that the next turn has started.
-                                cvar.notify_all();
-
-
                                 continue;
-
                             }
                             _ => {}
                         }
+                        //-skip ------------------------------------------------------------------------------------------
 
 
+                        //play -------------------------------------------------------------------------------------
                         let first_card: FrenchCard = my_cards.pop().expect("I've no more cards!");
                         println!("{}", format!("[Player {}] sending card {}", id, first_card).bright_magenta());
                         let card_to_send = PlayerCard {
@@ -131,20 +138,15 @@ impl Player {
                             card: first_card,
                         };
                         card_sender.send(card_to_send).unwrap();
+                        //play ---------------------------------------------------------------------------------------
                     }
                 }
-
-                // My turn end
-                let (lock, cvar) = &*next_turn;
-                let mut started = lock.lock().unwrap();
-                *started = true;
-                // We notify the condvar that the next turn has started.
-                cvar.notify_all();
 
             }
         });
         return thread_handler;
     }
+
 
     pub fn win_points(&mut self, new_points: i32) {
         self.points = self.points + new_points;

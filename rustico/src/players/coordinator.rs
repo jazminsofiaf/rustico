@@ -132,7 +132,7 @@ impl Coordinator {
                 *started = true;
                 // We notify the condvar that the value has changed.
                 println!("notificamos que empieza el juego");
-                cvar.notify_all();
+                cvar.notify_one();
             }
 
 
