@@ -23,13 +23,13 @@ impl Player {
                round_info: Arc<RwLock<Round>>) -> Player {
         Player {
             id,
-            thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier,my_turn, next_turn, round_info)),
+            thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier, my_turn, next_turn, round_info)),
             points: 0,
 
         }
     }
 
-    pub fn get_id(&self) ->i32{
+    pub fn get_id(&self) -> i32 {
         return self.id;
     }
 
@@ -41,7 +41,6 @@ impl Player {
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
                  next_turn: Arc<(Mutex<bool>, Condvar)>,
                  round_info: Arc<RwLock<Round>>) -> thread::JoinHandle<()> {
-
         let thread_handler = thread::spawn(move || {
             let mut player_game = PlayerGame::new(id, card_sender, my_cards, barrier, my_turn, next_turn, round_info);
             player_game.init();

@@ -1,5 +1,5 @@
 use crate::players::coordinator::{Coordinator, PlayerCard};
-use crate::card::french_card::{FrenchCard, get_card_dec};
+use crate::card::french_card::{FrenchCard, get_card_deck};
 use crate::players::player::Player;
 use std::sync::{Arc, Mutex, Condvar, mpsc, RwLock, Barrier};
 use crate::card::card_suit::card_suit::CardSuit;
@@ -16,7 +16,7 @@ fn coordinator_decide_round_type() {
 
 #[test]
 fn coordinator_shuffle_deck() {
-    let card_deck: Vec<FrenchCard> = get_card_dec();
+    let card_deck: Vec<FrenchCard> = get_card_deck();
     let coordinator: Coordinator = Coordinator::new(5);
     assert_ne!(card_deck, coordinator.shuffle_deck());
 }

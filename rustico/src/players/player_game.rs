@@ -6,18 +6,17 @@ use crate::game::round::Round;
 use colored::Colorize;
 use std::borrow::Borrow;
 
-pub struct PlayerGame{
+pub struct PlayerGame {
     id: i32,
     card_sender: Sender<Option<PlayerCard>>,
     my_cards: Vec<FrenchCard>,
     start_of_round_barrier: Arc<Barrier>,
     my_turn: Arc<(Mutex<bool>, Condvar)>,
     next_turn: Arc<(Mutex<bool>, Condvar)>,
-    round_lock: Arc<RwLock<Round>>
+    round_lock: Arc<RwLock<Round>>,
 }
 
 impl PlayerGame {
-
     pub fn new(id: i32,
                card_sender: Sender<Option<PlayerCard>>,
                my_cards: Vec<FrenchCard>,
@@ -50,7 +49,7 @@ impl PlayerGame {
             }
 
             self.round_lock.read().unwrap().wait_turn(self.borrow());
-            if self.round_lock.read().unwrap().should_skip_this_round(self.borrow()){
+            if self.round_lock.read().unwrap().should_skip_this_round(self.borrow()) {
                 println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", self.id).dimmed().bright_magenta());
                 self.card_sender.send(Option::None).unwrap();
                 continue;
@@ -61,15 +60,15 @@ impl PlayerGame {
         }
     }
 
-    pub fn get_id(&self) ->i32{
+    pub fn get_id(&self) -> i32 {
         return self.id;
     }
 
 
-    pub(crate) fn wait_my_turn(&self){
+    pub(crate) fn wait_my_turn(&self) {
         let (lock, cvar) = &*self.my_turn;
         let mut is_my_turn = lock.lock().unwrap();
-        println!("[player {}] is it my turn already ? {}",  self.id, is_my_turn);
+        println!("[player {}] is it my turn already ? {}", self.id, is_my_turn);
         while !*is_my_turn {
             is_my_turn = cvar.wait(is_my_turn).unwrap();
         }
@@ -77,7 +76,7 @@ impl PlayerGame {
         *is_my_turn = false;
     }
 
-    pub fn notify_next_player_turn(&self){
+    pub fn notify_next_player_turn(&self) {
         let (lock, cvar) = &*self.next_turn;
         let mut my_turn_end = lock.lock().unwrap();
         *my_turn_end = true;
@@ -85,7 +84,7 @@ impl PlayerGame {
         cvar.notify_one();
     }
 
-    pub fn play_this_round(&mut self){
+    pub fn play_this_round(&mut self) {
         let first_card: FrenchCard = self.my_cards.pop().expect("I've no more cards!");
         println!("{}", format!("[Player {}] sending card {}", self.id, first_card).bright_magenta());
         let card_to_send = PlayerCard {
@@ -96,6 +95,5 @@ impl PlayerGame {
         self.card_sender.send(Some(card_to_send)).unwrap();
         println!("{}", format!("[Player {}] just after sending card", self.id).bright_magenta());
     }
-
 }
 

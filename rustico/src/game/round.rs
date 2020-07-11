@@ -10,14 +10,14 @@ const ONE_POINT: i32 = 1;
 const FIVE_POINTS: i32 = 5;
 
 pub struct Round {
-    pub round_type : RoundType,
+    pub round_type: RoundType,
     pub forbidden_player_id: Option<i32>,
     pub game_ended: bool,
 
 }
 
-impl Round  {
-    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> Round {
+impl Round {
+    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool) -> Round {
         Round {
             round_type: Round::get_round_type(),
             forbidden_player_id,
@@ -31,7 +31,7 @@ impl Round  {
         return round_type;
     }
 
-    pub fn wait_turn(&self, player: &PlayerGame){
+    pub fn wait_turn(&self, player: &PlayerGame) {
         match self.round_type {
             RoundType::NORMAL => {
                 player.wait_my_turn();
@@ -40,9 +40,9 @@ impl Round  {
         }
     }
 
-    pub fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
+    pub fn should_skip_this_round(&self, player: &PlayerGame) -> bool {
         match self.forbidden_player_id {
-            Some(forbidden_id) if forbidden_id == player.get_id() =>   {
+            Some(forbidden_id) if forbidden_id == player.get_id() => {
                 match self.round_type {
                     RoundType::NORMAL => {
                         player.notify_next_player_turn();
@@ -54,31 +54,29 @@ impl Round  {
             _ => {}
         }
         return false;
-
     }
 
-    pub fn end_turn(&self, player: &PlayerGame){
+    pub fn end_turn(&self, player: &PlayerGame) {
         match self.round_type {
             RoundType::NORMAL => {
                 println!("[player {}] en end turn NORMAL", player.get_id());
                 player.notify_next_player_turn();
             }
 
-            _ => {println!("[player {}] en end turn RUST", player.get_id());}
+            _ => { println!("[player {}] en end turn RUST", player.get_id()); }
         }
     }
 
 
-
-    pub fn get_next_round(&self, last_player_id: i32)-> Round{
+    pub fn get_next_round(&self, last_player_id: i32) -> Round {
         return match self.round_type {
             RoundType::RUSTIC => {
-                Round::new(  Some(last_player_id), false)
+                Round::new(Some(last_player_id), false)
             }
             RoundType::NORMAL => {
-                Round::new( Option::None, false)
+                Round::new(Option::None, false)
             }
-        }
+        };
     }
 
 
@@ -105,6 +103,4 @@ impl Round  {
         }
         return players;
     }
-
-
 }
