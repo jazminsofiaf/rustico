@@ -151,11 +151,8 @@ fn coordinator_compute_score_four_draw_rustic() {
     hand.push(PlayerCard { player_id: 1, card: FrenchCard::new(CardSuit::DIAMOND, CardNumber::A) });
     hand.push(PlayerCard { player_id: 0, card: FrenchCard::new(CardSuit::HEART, CardNumber::A) });
 
-
     let coordinator: Coordinator = Coordinator::new(4);
-    let round = Round::new(Option::None,  false);
-    let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
-    let players: Vec<Player> = coordinator.compute_score(RUSTIC, hand, get_players());
+   let players: Vec<Player> = coordinator.compute_score(RUSTIC, hand, get_players());
     assert_eq!(players[0].get_points(), -3);
     assert_eq!(players[1].get_points(), 2);
     assert_eq!(players[2].get_points(), 2);
@@ -164,13 +161,19 @@ fn coordinator_compute_score_four_draw_rustic() {
 
 fn get_players() -> Vec<Player> {
     let mut players: Vec<Player> = Vec::with_capacity(4);
+
+
+
+
     for player_id in 0..4 {
         let cards: Vec<FrenchCard> = Vec::new();
         let (card_sender, card_receiver) = mpsc::channel::<PlayerCard>();
         let barrier = Arc::new(Barrier::new(5));
-        let round = Round::new(Option::None,  false);
+        let round = Round::new(RUSTIC,Option::None,  false);
         let arc: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
-        let player: Player = Player::new(player_id, card_sender, cards, barrier, arc );
+        let turn = Arc::new((Mutex::new(false), Condvar::new()));
+        let next_turn = turn.clone();
+        let player: Player = Player::new(player_id, card_sender, cards, barrier, turn, next_turn , arc );
         players.push(player);
     }
     return players;
