@@ -103,22 +103,17 @@ impl Coordinator {
         let round = Round::new(round_type, Option::None, false);
         let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
-
         let mut turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
         let mut turn_coordinator =turn_to_wait.clone();
-
         let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_info.borrow(), turn_to_wait);
 
         let mut round_len =  players.len();
 
-        //////
-
         for this_round in 0..number_of_rounds {
 
             println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_type).bright_blue());
-            println!("from coord. 'bout to start round");
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
-            println!("{} from coord.", barrier_wait_result);
+            println!("[Coordinator] barrier result: {}", barrier_wait_result);
 
 
             self.notify_first_turn_start(&*turn_coordinator);
