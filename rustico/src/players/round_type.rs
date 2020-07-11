@@ -4,7 +4,7 @@ pub mod round_type {
     use rand::distributions::{Distribution, Standard};
 
 
-    #[derive(PartialEq, Eq)]
+    #[derive(PartialEq, Eq, Clone, Copy)]
     pub enum RoundType {
         NORMAL,
         RUSTIC,

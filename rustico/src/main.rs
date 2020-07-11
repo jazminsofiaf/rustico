@@ -13,7 +13,7 @@ fn main() {
     println!("number of players: {}", number_of_players);
 
 
-    let coordinator: Coordinator = Coordinator::new(number_of_players);
+    let mut coordinator: Coordinator = Coordinator::new(number_of_players);
     coordinator.let_the_game_begin();
 }
 
