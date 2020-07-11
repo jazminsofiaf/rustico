@@ -99,11 +99,7 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-
-        ///// definimos info de la primera ronda
-
         let mut round_type = self.get_round_type();
-
         let round = Round::new(round_type, Option::None, false);
         let round_info: Arc<RwLock<Round>> = Arc::new(RwLock::new(round));
 
@@ -125,16 +121,7 @@ impl Coordinator {
             println!("{} from coord.", barrier_wait_result);
 
 
-           /* {
-                let (lock, cvar) = &*turn_coordinator;
-                let mut started = lock.lock().unwrap();
-                *started = true;
-                // We notify the condvar that the value has changed.
-                println!("notificamos que empieza el juego");
-                cvar.notify_one();
-            }*/
             self.notify_first_turn_start(&*turn_coordinator);
-
 
 
             let mut hand = Vec::new();
@@ -155,14 +142,15 @@ impl Coordinator {
             let mut  round_info_write_guard= round_info.write().unwrap();
             match round_type {
                 RUSTIC => {
-                    (*round_info_write_guard).forbidden_player_id = Some(hand.last().unwrap().player_id);
-                    (*round_info_write_guard).round_type = next_round_type;
+                    let next_round = Round::new(next_round_type, Some(hand.last().unwrap().player_id), false);
+                    (*round_info_write_guard) = next_round;
                     round_len = players.len() - 1;
 
                 }
                 NORMAL => {
-                    (*round_info_write_guard).forbidden_player_id = Option::None;
-                    (*round_info_write_guard).round_type = next_round_type;
+                    let next_round = Round::new(next_round_type, Option::None, false);
+                    (*round_info_write_guard) = next_round;
+
                     round_len = players.len();
                 }
             }
