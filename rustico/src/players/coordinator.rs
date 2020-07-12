@@ -5,7 +5,7 @@ use rand::seq::SliceRandom;
 use std::sync::{Arc, Barrier, mpsc, RwLock, Mutex, Condvar};
 use std::sync::mpsc::{Receiver, Sender};
 use colored::Colorize;
-use crate::game::round::Round;
+use crate::game::round::{Round, get_random_type_round};
 use std::borrow::Borrow;
 use rand::thread_rng;
 
@@ -51,7 +51,7 @@ impl Coordinator {
     }
 
 
-    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>, round_info: &Arc<RwLock<dyn Round>>, mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
+    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>, round_info: &Arc<RwLock<Box<dyn Round>>>, mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();
@@ -93,9 +93,8 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let round = Round::get_random_type_round(self.number_of_players);
-        let round_lock: Arc<RwLock<dyn Round>> = Arc::new(RwLock::new(round));
-
+        let round = get_random_type_round(self.number_of_players);
+        let round_lock: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(round));
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
         let turn_coordinator =turn_to_wait.clone();
         let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_lock.borrow(), turn_to_wait);
@@ -123,7 +122,7 @@ impl Coordinator {
             {
                 //this update occurs here because it is relevant for the next round, but it must be computed with this round's values
                 let mut round_info_write_guard = round_lock.write().unwrap();
-                (*round_info_write_guard) = round_info_write_guard.get_next_round(self.number_of_players, hand.last().unwrap().player_id);
+                (*round_info_write_guard) = round_info_write_guard.get_next_round( hand.last().unwrap().player_id);
                 //ends of block free lock
             }
 

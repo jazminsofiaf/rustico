@@ -13,7 +13,7 @@ pub struct PlayerGame{
     start_of_round_barrier: Arc<Barrier>,
     my_turn: Arc<(Mutex<bool>, Condvar)>,
     next_turn: Arc<(Mutex<bool>, Condvar)>,
-    round_lock: Arc<RwLock<dyn Round>>
+    round_lock: Arc<RwLock<Box<dyn Round>>>
 }
 
 impl PlayerGame {
@@ -24,7 +24,7 @@ impl PlayerGame {
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
                next_turn: Arc<(Mutex<bool>, Condvar)>,
-               round_info: Arc<RwLock<dyn Round>>) -> PlayerGame {
+               round_lock: Arc<RwLock<Box<dyn Round>>>) -> PlayerGame {
         PlayerGame {
             id,
             card_sender,
@@ -32,7 +32,7 @@ impl PlayerGame {
             start_of_round_barrier,
             my_turn,
             next_turn,
-            round_lock: round_info,
+            round_lock,
         }
     }
 

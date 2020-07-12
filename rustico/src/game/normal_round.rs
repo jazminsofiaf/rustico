@@ -3,16 +3,14 @@ use crate::players::player_game::PlayerGame;
 use crate::game::rustic_round::RusticRound;
 
 pub struct NormalRound {
-    pub len: i32,
-    pub forbidden_player_id: Option<i32>,
-    pub game_ended: bool,
+    forbidden_player_id: Option<i32>,
+    game_ended: bool,
 
 }
 
 impl NormalRound {
-    pub fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> NormalRound {
+    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> NormalRound {
         NormalRound {
-            len,
             forbidden_player_id,
             game_ended,
         }
@@ -20,15 +18,21 @@ impl NormalRound {
 }
 
 impl Round for NormalRound  {
-
-    fn get_next_rustic_round(&self, number_of_players:i32, _last_player_id: i32)-> RusticRound{
-        let round_len = number_of_players;
-        RusticRound::new(round_len,  Option::None, false)
+    fn get_forbidden_player_id(&self) -> Option<i32> {
+        return self.forbidden_player_id;
     }
 
-    fn get_next_normal_round(&self, number_of_players:i32, _last_player_id: i32)-> NormalRound{
-        let round_len = number_of_players;
-        NormalRound::new(round_len,  Option::None, false)
+    fn is_game_ended(&self) -> bool {
+       return self.game_ended;
+    }
+
+
+    fn get_next_rustic_round(&self, _last_player_id: i32)-> RusticRound{
+        RusticRound::new(  Option::None, false)
+    }
+
+    fn get_next_normal_round(&self,  _last_player_id: i32)-> NormalRound{
+        NormalRound::new( Option::None, false)
     }
 
     fn wait_turn(&self, player: &PlayerGame){
