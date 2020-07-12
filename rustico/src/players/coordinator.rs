@@ -87,8 +87,7 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let round = get_random_type_round(self.number_of_players);
-        let round_lock: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(round));
+        let round_lock: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(get_random_type_round()));
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
         let turn_coordinator = turn_to_wait.clone();
         let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_lock.borrow(), turn_to_wait);

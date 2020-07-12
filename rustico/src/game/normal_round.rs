@@ -7,7 +7,6 @@ pub struct NormalRound {
     name: RoundType,
     forbidden_player_id: Option<i32>,
     game_ended: bool,
-
 }
 
 impl NormalRound {
@@ -57,7 +56,6 @@ impl Round for NormalRound  {
 
 
     fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
-        //if(self.base.should_skip_this_round(player)
         match self.forbidden_player_id {
             Some(forbidden_id) if forbidden_id == player.get_id() =>   {
                 player.notify_next_player_turn();

@@ -10,7 +10,7 @@ use crate::game::rustic_round::RusticRound;
 const TEN_POINTS: i32 = 10;
 
 
-pub fn get_random_type_round(len: i32)-> Box<dyn Round> {
+pub fn get_random_type_round()-> Box<dyn Round> {
     let mut rng = rand::thread_rng();
     let round_type: RoundType = rng.gen();
     return match round_type {
@@ -53,7 +53,7 @@ pub trait Round:  Send + Sync  {
     fn get_next_normal_round(&self,  last_player_id: i32)-> NormalRound;
 
 
-    fn wait_turn(&self, player: &PlayerGame){
+    fn wait_turn(&self, _player: &PlayerGame){
         //default do nothing
     }
 
@@ -67,7 +67,7 @@ pub trait Round:  Send + Sync  {
         return false;
     }
 
-    fn end_turn(&self, player: &PlayerGame){
+    fn end_turn(&self, _player: &PlayerGame){
         //default do nothing
     }
 
@@ -88,7 +88,7 @@ pub trait Round:  Send + Sync  {
         return players;
     }
 
-    fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
+    fn compute_score(&self, hand: Vec<PlayerCard>, players: Vec<Player>) -> Vec<Player> {
         return self.compute_score_default(hand.as_ref(), players);
     }
 
