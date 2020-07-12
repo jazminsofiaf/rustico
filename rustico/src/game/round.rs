@@ -29,9 +29,10 @@ pub trait Round:  Send + Sync  {
 
     //fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> Self;
 
+    fn get_name(&self)-> RoundType;
+
     fn get_forbidden_player_id(&self) -> Option<i32>;
     fn is_game_ended(&self) ->bool;
-
 
     fn get_next_round(&self, last_player_id: i32)-> Box<dyn Round> {
         let mut rng = rand::thread_rng();
@@ -57,7 +58,7 @@ pub trait Round:  Send + Sync  {
     }
 
     fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
-        match self.get_forbidden_player_id {
+        match self.get_forbidden_player_id() {
             Some(forbidden_id) if forbidden_id == player.get_id() =>   {
                 return true;
             }
@@ -71,9 +72,7 @@ pub trait Round:  Send + Sync  {
     }
 
 
-
-
-    fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
+    fn compute_score_default(&self, hand: &Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
         let winner_response = hand.iter()
             .max_by(|one, other| one.card.cmp(&other.card))
             .unwrap();
@@ -81,13 +80,16 @@ pub trait Round:  Send + Sync  {
             .filter(|response| !(response.card < winner_response.card)).collect::<Vec<_>>();
 
         let points = TEN_POINTS / draw.len() as i32;
-        println!("sending points {}", points);
 
         for winner_card in draw {
-            println!("sending points {}, {}", winner_card.player_id, winner_card.card);
+            println!("sending points {} to player {} who send higher card : {}", points, winner_card.player_id, winner_card.card);
             players[winner_card.player_id as usize].win_points(points);
         }
         return players;
+    }
+
+    fn compute_score(&self, hand: Vec<PlayerCard>, mut players: Vec<Player>) -> Vec<Player> {
+        return self.compute_score_default(hand.as_ref(), players);
     }
 
 }

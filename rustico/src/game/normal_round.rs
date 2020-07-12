@@ -1,8 +1,10 @@
 use crate::game::round::Round;
 use crate::players::player_game::PlayerGame;
 use crate::game::rustic_round::RusticRound;
+use crate::players::round_type::round_type::RoundType;
 
 pub struct NormalRound {
+    name: RoundType,
     forbidden_player_id: Option<i32>,
     game_ended: bool,
 
@@ -11,13 +13,27 @@ pub struct NormalRound {
 impl NormalRound {
     pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> NormalRound {
         NormalRound {
+            name: RoundType::NORMAL,
             forbidden_player_id,
             game_ended,
         }
     }
+
+    pub fn get_end_round() -> NormalRound {
+        NormalRound {
+            name: RoundType::NORMAL,
+            forbidden_player_id: Option::None,
+            game_ended:true,
+        }
+
+    }
 }
 
 impl Round for NormalRound  {
+    fn get_name(&self) -> RoundType {
+        return self.name;
+    }
+
     fn get_forbidden_player_id(&self) -> Option<i32> {
         return self.forbidden_player_id;
     }

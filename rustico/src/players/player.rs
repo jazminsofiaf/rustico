@@ -15,7 +15,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(id: i32,
-               card_sender: Sender<PlayerCard>,
+               card_sender: Sender<Option<PlayerCard>>,
                cards: Vec<FrenchCard>,
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
@@ -23,19 +23,19 @@ impl Player {
                round_info: Arc<RwLock<Box<dyn Round>>>) -> Player {
         Player {
             id,
-            thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier,my_turn, next_turn, round_info)),
+            thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier, my_turn, next_turn, round_info)),
             points: 0,
 
         }
     }
 
-    pub fn get_id(&self) ->i32{
+    pub fn get_id(&self) -> i32 {
         return self.id;
     }
 
 
     fn init_play(id: i32,
-                 card_sender: Sender<PlayerCard>,
+                 card_sender: Sender<Option<PlayerCard>>,
                  my_cards: Vec<FrenchCard>,
                  barrier: Arc<Barrier>,
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
