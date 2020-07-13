@@ -1,6 +1,7 @@
 extern crate clap;
 
 use clap::App;
+use colored::*;
 
 use rustico::players::coordinator::Coordinator;
 
@@ -9,8 +10,11 @@ fn main() {
     let mut debug: bool = true;
     parse_args(&mut number_of_players, &mut debug);
 
-    println!("debug: {}", debug);
-    println!("number of players: {}", number_of_players);
+    println!("{}", format!("GAME LOADING...\nINFO:").bright_white());
+    println!("{}", format!("\t- debug: {}", debug).bright_white());
+    println!("{}", format!("\t- number of players: {}", number_of_players).bright_white());
+    println!("{}", format!("\nTo change any of the settings, please run the game with the\n\
+                           --help (-h) flag for more info on how to do it.\n").white().dimmed());
 
 
     let mut coordinator: Coordinator = Coordinator::new(number_of_players);

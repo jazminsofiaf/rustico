@@ -37,9 +37,8 @@ impl PlayerGame {
 
     pub fn init(&mut self) {
         loop {
-            println!("{}", format!("[Player {}] waiting to start round", self.id).dimmed().red());
-            let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
-            println!("[Player {}] barrier result {} ", self.id, barrier_wait_result);
+            println!("{}", format!("⏲️  [Player {}] waiting to start round", self.id).italic().red());
+            self.start_of_round_barrier.wait();
 
             if self.round_lock.read().unwrap().is_game_ended() {
                 break;
@@ -47,9 +46,9 @@ impl PlayerGame {
 
             self.round_lock.read().unwrap().wait_turn(self.borrow());
             if self.round_lock.read().unwrap().should_skip_this_round(self.borrow()) {
-                println!("{}", format!("[Player {}] skip round cuz I put the last card in prev.\
+                println!("{}", format!("😓  [Player {}] skip round cuz I put the last card in prev. \
                                         round, which was rustic",
-                                       self.id).dimmed().bright_magenta());
+                                       self.id).bright_magenta());
                 self.card_sender.send(Option::None).unwrap();
                 continue;
             }
@@ -65,7 +64,8 @@ impl PlayerGame {
     pub(crate) fn wait_my_turn(&self) {
         let (lock, cvar) = &*self.my_turn;
         let mut is_my_turn = lock.lock().unwrap();
-        println!("[player {}] is it my turn already? {}", self.id, is_my_turn);
+        // TODO revisar si sacamos definitivamente este print. Se me hace bastante engorroso el output del programa teniendo el "waiting" y este.
+        // println!("{}", format!("[player {}] is it my turn already? {}", self.id, is_my_turn).italic().red());
         while !*is_my_turn {
             is_my_turn = cvar.wait(is_my_turn).unwrap();
         }
@@ -83,7 +83,7 @@ impl PlayerGame {
 
     pub fn play_this_round(&mut self) {
         let first_card: FrenchCard = self.my_cards.pop().expect("I've no more cards!");
-        println!("{}", format!("[Player {}] sending card {}", self.id, first_card).bright_magenta());
+        println!("{}", format!("🃏  [Player {}] sending card {}", self.id, first_card).bright_magenta());
         let card_to_send = PlayerCard {
             player_id: self.id,
             card: first_card,

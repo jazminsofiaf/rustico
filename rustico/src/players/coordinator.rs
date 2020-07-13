@@ -25,7 +25,13 @@ pub struct Coordinator {
 
 impl Coordinator {
     pub fn new(number_of_players: i32) -> Coordinator {
-        /* to sync start of round */
+        /* to sync start of round.
+         * the barrier receives num of players + 1 (for coord.)
+         * because the coord. needs to handle each round's setup,
+         * and thus also be ready before the round starts.
+         * The barrier turns out to be a simple and effective way to sync
+         * players and coord.!
+         * */
         let start_of_round_barrier = Arc::new(Barrier::new(number_of_players as usize + 1));
 
         let (card_sender, card_receiver) = mpsc::channel::<Option<PlayerCard>>();
@@ -39,7 +45,7 @@ impl Coordinator {
     }
 
     pub fn shuffle_deck(&self) -> Vec<FrenchCard> {
-        println!("coordinator shuffling cards");
+        println!("{}", format!("🃏  Coordinator shuffling cards...").bright_white());
         let mut card_deck: Vec<FrenchCard> = get_card_deck();
         card_deck.shuffle(&mut thread_rng());
         return card_deck;
@@ -49,7 +55,7 @@ impl Coordinator {
                                       round_info: &Arc<RwLock<Box<dyn Round>>>,
                                       mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
-        println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
+        println!("{}", format!("🃏  coordinator dealt {} cards for each player", amount_of_cards_by_player).bright_white());
         let mut card_iter = cards.into_iter().peekable();
 
 
@@ -72,13 +78,13 @@ impl Coordinator {
 
         let remaining_cards: Vec<FrenchCard> = card_iter.by_ref().take(amount_of_cards_by_player).collect();
         if remaining_cards.len() > 0 {
-            println!("Cards left after dealing: {:?} ", remaining_cards);
+            println!("{}", format!("Cards left after dealing: {:?} ", remaining_cards).bright_white());
         }
         return players;
     }
 
     pub fn let_the_game_begin(&mut self) {
-        println!("{}", "Let the game begin!".bright_white());
+        println!("{}", "                            🏁  Let the game begin! 🏁".bright_white());
 
         let deck: Vec<FrenchCard> = self.shuffle_deck();
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
@@ -91,12 +97,10 @@ impl Coordinator {
 
 
         for this_round in 0..number_of_rounds {
-            println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ",
-                                   this_round,
-                                   round_lock.read().unwrap().get_name()).bright_blue());
-            let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
+            /* add 1 to this round so rounds aren't displayed as counting from 0 */
+            self.print_round_info(this_round + 1, round_lock.read().unwrap().get_name().to_string());
 
-            println!("[Coordinator] barrier result: {}", barrier_wait_result);
+            self.start_of_round_barrier.wait();
 
             self.notify_first_turn_start(&*turn_coordinator);
 
@@ -106,7 +110,7 @@ impl Coordinator {
                 let maybe_player_card: Option<PlayerCard> = self.card_receiver.recv().expect("No more cards");
                 match maybe_player_card {
                     Some(player_card) => {
-                        println!("receiving card: {} from player {}", player_card.card, player_card.player_id);
+                        println!("{}", format!("🃏  [Coordinator] Receiving card: {} from player {}", player_card.card, player_card.player_id).yellow());
                         hand.push(player_card);
                     }
                     _ => {}
@@ -134,7 +138,7 @@ impl Coordinator {
         let mut started = lock.lock().unwrap();
         *started = true;
         /* We notify the condvar that the value has changed. */
-        println!("notificamos que empieza el juego");
+        println!("{}", format!("🚀  [Coordinator] I declare the game started!").bright_white());
         cvar.notify_one();
     }
 
@@ -146,11 +150,57 @@ impl Coordinator {
             *round_info_write_guard = Box::new(round);
         }
         self.start_of_round_barrier.wait();
+        self.print_leaderboard(&mut players);
+
         /* wait for all threads for nice program termination */
         for player in players.iter_mut() {
-            println!("player id: {} POINTS = {}", player.get_id(), player.get_points());
             player.wait();
         }
-        println!("game ends");
+    }
+
+    pub fn print_leaderboard(&self, players: &mut Vec<Player>){
+        println!();
+        println!("{}", format!("                            |-------------+--------|").bold().bright_blue());
+        println!("{}", format!("                            |     LEADERBOARD      |").bold().bright_blue());
+        println!("{}", format!("                            |-------------+--------|").bold().bright_blue());
+        println!("{}", format!("                            |  Player id  | Score  |").bold().bright_blue());
+        println!("{}", format!("                            |-------------+--------|").bold().bright_blue());
+
+            for player in players.iter_mut() {
+                /* format players id to 2 digits */
+                let mut this_players_id = "".to_owned();
+                if player.get_id() < 10{
+                    this_players_id.push_str(" ");
+                }
+                this_players_id.push_str(player.get_id().to_string().as_str());
+
+                /* format players score to 3 digits*/
+                let mut this_players_score = "".to_owned();
+                let score_as_str_len = player.get_points().to_string().len();
+                for _ in 0..(3-score_as_str_len) {
+                    this_players_score.push_str(" ");
+                }
+                this_players_score.push_str(player.get_points().to_string().as_str());
+
+                /* print players score */
+                println!("{}", format!("                            |     {}      |  {}   |", this_players_id, this_players_score).bold().bright_blue());
+        }
+        println!("{}", format!("                            |-------------+--------|\n").bold().bright_blue());
+    }
+
+    pub fn print_round_info(&self, this_round: i32, game_type: String) {
+        let mut _this_round = "".to_owned();
+        if this_round < 10 {
+            _this_round.push_str("0");
+        }
+
+        _this_round.push_str(this_round.to_string().as_str());
+
+        println!("{}", format!("\n|-----------------+--------|\n\
+        |     ** NEW ROUND **      |\n\
+        |-----------------+--------|\n\
+        | num. of round   |   {}   |\n\
+        | type            | {} |\n\
+        |-----------------+--------|\n", _this_round, game_type).bright_blue());
     }
 }
