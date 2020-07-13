@@ -5,7 +5,7 @@ use colored::*;
 
 use rustico::players::coordinator::Coordinator;
 use rustico::logger::logger::Logger;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::mpsc;
 use rustico::consts::consts::consts::STOP_LOGGING_MSG;
 
 fn main() {
@@ -23,7 +23,7 @@ fn main() {
 
     /* send end of game msg to logger */
     logger_sender.send(STOP_LOGGING_MSG.to_string()).expect("error sending msg2");
-    logger.join();
+    logger.join().expect("error joining logger");
 }
 
 fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {

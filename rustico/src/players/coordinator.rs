@@ -37,7 +37,7 @@ impl Coordinator {
 
         let (card_sender, card_receiver) = mpsc::channel::<Option<PlayerCard>>();
 
-        logger_sender.send("Creating coordinator...".to_string());
+        logger_sender.send("Creating coordinator...".to_string()).expect("error logging msg");
 
         return Coordinator {
             number_of_players,
@@ -88,7 +88,7 @@ impl Coordinator {
     }
 
     pub fn let_the_game_begin(&mut self) {
-        self.logger_sender.send("Beggining the game...".to_string());
+        self.logger_sender.send("Beggining the game...".to_string()).expect("error logging msg");
         println!("{}", "                            🏁  Let the game begin! 🏁".bright_white());
         println!();
 
