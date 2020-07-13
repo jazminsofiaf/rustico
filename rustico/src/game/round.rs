@@ -10,56 +10,51 @@ use crate::game::rustic_round::RusticRound;
 const TEN_POINTS: i32 = 10;
 
 
-pub fn get_random_type_round()-> Box<dyn Round> {
+pub fn get_random_type_round() -> Box<dyn Round> {
     let mut rng = rand::thread_rng();
     let round_type: RoundType = rng.gen();
     return match round_type {
         RoundType::NORMAL => {
-            Box::new(NormalRound::new( Option::None, false))
+            Box::new(NormalRound::new(Option::None, false))
         }
-        RoundType::RUSTIC =>{
-            Box::new(RusticRound::new( Option::None, false))
+        RoundType::RUSTIC => {
+            Box::new(RusticRound::new(Option::None, false))
         }
-    }
-
+    };
 }
 
 
-pub trait Round:  Send + Sync  {
-
-    //fn new(len: i32, forbidden_player_id: Option<i32>, game_ended: bool ) -> Self;
-
-    fn get_name(&self)-> RoundType;
+pub trait Round: Send + Sync {
+    fn get_name(&self) -> RoundType;
 
     fn get_forbidden_player_id(&self) -> Option<i32>;
-    fn is_game_ended(&self) ->bool;
+    fn is_game_ended(&self) -> bool;
 
-    fn get_next_round(&self, last_player_id: i32)-> Box<dyn Round> {
+    fn get_next_round(&self, last_player_id: i32) -> Box<dyn Round> {
         let mut rng = rand::thread_rng();
         let round_type: RoundType = rng.gen();
         return match round_type {
-            RoundType::NORMAL =>{
-                Box::new(self.get_next_normal_round( last_player_id))
+            RoundType::NORMAL => {
+                Box::new(self.get_next_normal_round(last_player_id))
             }
-            RoundType::RUSTIC =>{
-                Box::new(self.get_next_rustic_round( last_player_id))
+            RoundType::RUSTIC => {
+                Box::new(self.get_next_rustic_round(last_player_id))
             }
-        }
-
+        };
     }
 
-    fn get_next_rustic_round(&self,  last_player_id: i32)-> RusticRound;
+    fn get_next_rustic_round(&self, last_player_id: i32) -> RusticRound;
 
-    fn get_next_normal_round(&self,  last_player_id: i32)-> NormalRound;
+    fn get_next_normal_round(&self, last_player_id: i32) -> NormalRound;
 
 
-    fn wait_turn(&self, _player: &PlayerGame){
-        //default do nothing
+    fn wait_turn(&self, _player: &PlayerGame) {
+        /* default: do nothing */
     }
 
-    fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
+    fn should_skip_this_round(&self, player: &PlayerGame) -> bool {
         match self.get_forbidden_player_id() {
-            Some(forbidden_id) if forbidden_id == player.get_id() =>   {
+            Some(forbidden_id) if forbidden_id == player.get_id() => {
                 return true;
             }
             _ => {}
@@ -67,8 +62,8 @@ pub trait Round:  Send + Sync  {
         return false;
     }
 
-    fn end_turn(&self, _player: &PlayerGame){
-        //default do nothing
+    fn end_turn(&self, _player: &PlayerGame) {
+        /* default: do nothing */
     }
 
 
@@ -91,5 +86,4 @@ pub trait Round:  Send + Sync  {
     fn compute_score(&self, hand: Vec<PlayerCard>, players: Vec<Player>) -> Vec<Player> {
         return self.compute_score_default(hand.as_ref(), players);
     }
-
 }

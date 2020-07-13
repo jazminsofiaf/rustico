@@ -1,4 +1,3 @@
-
 use crate::card::french_card::FrenchCard;
 use crate::card::card_suit::card_suit::CardSuit;
 use crate::players::player::Player;
@@ -33,7 +32,6 @@ fn normal_round_compute_score_one_winner() {
     assert_eq!(players[3].get_points(), 0);
 }
 
-
 #[test]
 fn normal_round_compute_score_two_draw() {
     let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
@@ -44,7 +42,7 @@ fn normal_round_compute_score_two_draw() {
 
 
     let round = NormalRound::new(Option::None, false);
-    let players: Vec<Player> = round.compute_score( hand, get_players());
+    let players: Vec<Player> = round.compute_score(hand, get_players());
 
     assert_eq!(players[0].get_points(), 0);
     assert_eq!(players[1].get_points(), 5);
@@ -86,7 +84,6 @@ fn normal_round_compute_score_four_draw() {
     assert_eq!(players[3].get_points(), 2);
 }
 
-
 #[test]
 fn rustic_round_compute_score_one_winner() {
     let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
@@ -104,7 +101,6 @@ fn rustic_round_compute_score_one_winner() {
     assert_eq!(players[3].get_points(), 0);
 }
 
-
 #[test]
 fn rustic_round_compute_score_two_draw() {
     let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
@@ -115,7 +111,7 @@ fn rustic_round_compute_score_two_draw() {
 
 
     let round = RusticRound::new(Option::None, false);
-    let players: Vec<Player> = round.compute_score( hand, get_players());
+    let players: Vec<Player> = round.compute_score(hand, get_players());
     assert_eq!(players[0].get_points(), 1);
     assert_eq!(players[1].get_points(), 5);
     assert_eq!(players[2].get_points(), 5);
@@ -132,7 +128,7 @@ fn rustic_round_compute_score_three_draw() {
 
 
     let round = RusticRound::new(Option::None, false);
-    let players: Vec<Player> = round.compute_score( hand, get_players());
+    let players: Vec<Player> = round.compute_score(hand, get_players());
     assert_eq!(players[0].get_points(), 3);
     assert_eq!(players[1].get_points(), 3);
     assert_eq!(players[2].get_points(), 1);
@@ -148,7 +144,7 @@ fn rustic_round_compute_score_four_draw() {
     hand.push(PlayerCard { player_id: 0, card: FrenchCard::new(CardSuit::HEART, CardNumber::A) });
 
     let round = RusticRound::new(Option::None, false);
-    let players: Vec<Player> = round.compute_score( hand, get_players());
+    let players: Vec<Player> = round.compute_score(hand, get_players());
     assert_eq!(players[0].get_points(), -3);
     assert_eq!(players[1].get_points(), 2);
     assert_eq!(players[2].get_points(), 2);
@@ -165,7 +161,7 @@ fn get_players() -> Vec<Player> {
         let arc: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(get_random_type_round()));
         let turn = Arc::new((Mutex::new(false), Condvar::new()));
         let next_turn = turn.clone();
-        let player: Player = Player::new(player_id, card_sender, cards, barrier, turn, next_turn , arc );
+        let player: Player = Player::new(player_id, card_sender, cards, barrier, turn, next_turn, arc);
         players.push(player);
     }
     return players;

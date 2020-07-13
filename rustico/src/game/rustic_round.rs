@@ -12,10 +12,9 @@ pub struct RusticRound {
     name: RoundType,
     forbidden_player_id: Option<i32>,
     game_ended: bool,
-
 }
 
-impl  RusticRound {
+impl RusticRound {
     pub fn new(forbidden_player_id: Option<i32>, game_ended: bool) -> RusticRound {
         RusticRound {
             name: RoundType::RUSTIC,
@@ -26,7 +25,6 @@ impl  RusticRound {
 }
 
 impl Round for RusticRound {
-
     fn get_name(&self) -> RoundType {
         return self.name;
     }
@@ -39,12 +37,12 @@ impl Round for RusticRound {
         return self.game_ended;
     }
 
-    fn get_next_rustic_round(&self,  last_player_id: i32) -> RusticRound{
-        RusticRound::new( Some(last_player_id), false)
+    fn get_next_rustic_round(&self, last_player_id: i32) -> RusticRound {
+        RusticRound::new(Some(last_player_id), false)
     }
 
-    fn get_next_normal_round(&self,  last_player_id: i32) -> NormalRound {
-        NormalRound::new( Some(last_player_id), false)
+    fn get_next_normal_round(&self, last_player_id: i32) -> NormalRound {
+        NormalRound::new(Some(last_player_id), false)
     }
 
 
@@ -56,7 +54,4 @@ impl Round for RusticRound {
 
         return players;
     }
-
-
 }
-

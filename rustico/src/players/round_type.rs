@@ -3,7 +3,6 @@ pub mod round_type {
     use rand::Rng;
     use rand::distributions::{Distribution, Standard};
 
-
     #[derive(PartialEq, Eq, Clone, Copy)]
     pub enum RoundType {
         NORMAL,

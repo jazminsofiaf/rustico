@@ -10,7 +10,7 @@ pub struct NormalRound {
 }
 
 impl NormalRound {
-    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool ) -> NormalRound {
+    pub fn new(forbidden_player_id: Option<i32>, game_ended: bool) -> NormalRound {
         NormalRound {
             name: RoundType::NORMAL,
             forbidden_player_id,
@@ -22,13 +22,12 @@ impl NormalRound {
         NormalRound {
             name: RoundType::NORMAL,
             forbidden_player_id: Option::None,
-            game_ended:true,
+            game_ended: true,
         }
-
     }
 }
 
-impl Round for NormalRound  {
+impl Round for NormalRound {
     fn get_name(&self) -> RoundType {
         return self.name;
     }
@@ -38,38 +37,35 @@ impl Round for NormalRound  {
     }
 
     fn is_game_ended(&self) -> bool {
-       return self.game_ended;
+        return self.game_ended;
     }
 
 
-    fn get_next_rustic_round(&self, _last_player_id: i32)-> RusticRound{
-        RusticRound::new(  Option::None, false)
+    fn get_next_rustic_round(&self, _last_player_id: i32) -> RusticRound {
+        RusticRound::new(Option::None, false)
     }
 
-    fn get_next_normal_round(&self,  _last_player_id: i32)-> NormalRound{
-        NormalRound::new( Option::None, false)
+    fn get_next_normal_round(&self, _last_player_id: i32) -> NormalRound {
+        NormalRound::new(Option::None, false)
     }
 
-    fn wait_turn(&self, player: &PlayerGame){
+    fn wait_turn(&self, player: &PlayerGame) {
         player.wait_my_turn();
     }
 
 
-    fn should_skip_this_round(&self, player: &PlayerGame) -> bool{
+    fn should_skip_this_round(&self, player: &PlayerGame) -> bool {
         match self.forbidden_player_id {
-            Some(forbidden_id) if forbidden_id == player.get_id() =>   {
+            Some(forbidden_id) if forbidden_id == player.get_id() => {
                 player.notify_next_player_turn();
                 return true;
             }
             _ => {}
         }
         return false;
-
     }
 
-    fn end_turn(&self, player: &PlayerGame){
+    fn end_turn(&self, player: &PlayerGame) {
         player.notify_next_player_turn();
     }
-
-
 }

@@ -25,5 +25,7 @@ pub mod card_suit {
             write!(f, "{}", self.value())
         }
     }
-// call like CardSuit::enumvalue.value()
+
+    /* NOTE to dev: call like CardSuit::enumvalue.value() */
+
 }

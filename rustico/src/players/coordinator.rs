@@ -16,14 +16,12 @@ pub struct PlayerCard {
     pub card: FrenchCard,
 }
 
-
 pub struct Coordinator {
     number_of_players: i32,
     start_of_round_barrier: Arc<Barrier>,
     card_sender: Sender<Option<PlayerCard>>,
     card_receiver: Receiver<Option<PlayerCard>>,
 }
-
 
 impl Coordinator {
     pub fn new(number_of_players: i32) -> Coordinator {
@@ -40,7 +38,6 @@ impl Coordinator {
         };
     }
 
-
     pub fn shuffle_deck(&self) -> Vec<FrenchCard> {
         println!("coordinator shuffling cards");
         let mut card_deck: Vec<FrenchCard> = get_card_deck();
@@ -48,8 +45,9 @@ impl Coordinator {
         return card_deck;
     }
 
-
-    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>, round_info: &Arc<RwLock<Box<dyn Round>>>, mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
+    pub fn deal_cards_between_players(&mut self, cards: Vec<FrenchCard>,
+                                      round_info: &Arc<RwLock<Box<dyn Round>>>,
+                                      mut turn_to_wait: Arc<(Mutex<bool>, Condvar)>) -> Vec<Player> {
         let amount_of_cards_by_player = cards.len() / self.number_of_players as usize;
         println!("coordinator deal {} cards for each player", amount_of_cards_by_player);
         let mut card_iter = cards.into_iter().peekable();
@@ -79,7 +77,6 @@ impl Coordinator {
         return players;
     }
 
-
     pub fn let_the_game_begin(&mut self) {
         println!("{}", "Let the game begin!".bright_white());
 
@@ -94,8 +91,11 @@ impl Coordinator {
 
 
         for this_round in 0..number_of_rounds {
-            println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ", this_round, round_lock.read().unwrap().get_name()).bright_blue());
+            println!("{}", format!("** New round! **\n- num of round: {}\n- type = {} ",
+                                   this_round,
+                                   round_lock.read().unwrap().get_name()).bright_blue());
             let barrier_wait_result = self.start_of_round_barrier.wait().is_leader();
+
             println!("[Coordinator] barrier result: {}", barrier_wait_result);
 
             self.notify_first_turn_start(&*turn_coordinator);
@@ -115,10 +115,12 @@ impl Coordinator {
 
             println!("{}", "End of round.".bright_red());
             {
-                //this update occurs here because it is relevant for the next round, but it must be computed with this round's values
+                /* this update occurs here because it is relevant for the next round,
+                 * but it must be computed with this round's values
+                 * */
                 let mut round_info_write_guard = round_lock.write().unwrap();
                 (*round_info_write_guard) = round_info_write_guard.get_next_round(hand.last().unwrap().player_id);
-                //ends of block free lock
+                /* ends of block: free lock */
             }
 
             players = round_lock.read().unwrap().compute_score(hand, players);
@@ -127,17 +129,16 @@ impl Coordinator {
         self.end_game(players, round_lock);
     }
 
-
     fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {
         let (lock, cvar) = turn_coordinator;
         let mut started = lock.lock().unwrap();
         *started = true;
-        // We notify the condvar that the value has changed.
+        /* We notify the condvar that the value has changed. */
         println!("notificamos que empieza el juego");
         cvar.notify_one();
     }
 
-    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Box<dyn Round>>>){
+    fn end_game(&self, mut players: Vec<Player>, round_lock: Arc<RwLock<Box<dyn Round>>>) {
         {
             /* signal end of game and enable one more round so players can read updated status */
             let mut round_info_write_guard = round_lock.write().unwrap();

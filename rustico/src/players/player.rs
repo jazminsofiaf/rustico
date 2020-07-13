@@ -23,7 +23,9 @@ impl Player {
                round_info: Arc<RwLock<Box<dyn Round>>>) -> Player {
         Player {
             id,
-            thread: Some(Player::init_play(id, card_sender, cards, start_of_round_barrier, my_turn, next_turn, round_info)),
+            thread: Some(Player::init_play(id, card_sender, cards,
+                                           start_of_round_barrier, my_turn,
+                                           next_turn, round_info)),
             points: 0,
 
         }
@@ -33,7 +35,6 @@ impl Player {
         return self.id;
     }
 
-
     fn init_play(id: i32,
                  card_sender: Sender<Option<PlayerCard>>,
                  my_cards: Vec<FrenchCard>,
@@ -41,15 +42,15 @@ impl Player {
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
                  next_turn: Arc<(Mutex<bool>, Condvar)>,
                  round_info: Arc<RwLock<Box<dyn Round>>>) -> thread::JoinHandle<()> {
-
         let thread_handler = thread::spawn(move || {
-            let mut player_game = PlayerGame::new(id, card_sender, my_cards, barrier, my_turn, next_turn, round_info);
+            let mut player_game = PlayerGame::new(id, card_sender, my_cards,
+                                                  barrier, my_turn, next_turn,
+                                                  round_info);
             player_game.init();
         });
 
         return thread_handler;
     }
-
 
     pub fn win_points(&mut self, new_points: i32) {
         self.points = self.points + new_points;

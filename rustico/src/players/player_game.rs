@@ -13,7 +13,7 @@ pub struct PlayerGame {
     start_of_round_barrier: Arc<Barrier>,
     my_turn: Arc<(Mutex<bool>, Condvar)>,
     next_turn: Arc<(Mutex<bool>, Condvar)>,
-    round_lock: Arc<RwLock<Box<dyn Round>>>
+    round_lock: Arc<RwLock<Box<dyn Round>>>,
 }
 
 impl PlayerGame {
@@ -47,7 +47,9 @@ impl PlayerGame {
 
             self.round_lock.read().unwrap().wait_turn(self.borrow());
             if self.round_lock.read().unwrap().should_skip_this_round(self.borrow()) {
-                println!("{}", format!("[Player {}] skip round cuz I put the last card in prev. round, which was rustic", self.id).dimmed().bright_magenta());
+                println!("{}", format!("[Player {}] skip round cuz I put the last card in prev.\
+                                        round, which was rustic",
+                                       self.id).dimmed().bright_magenta());
                 self.card_sender.send(Option::None).unwrap();
                 continue;
             }
@@ -60,15 +62,14 @@ impl PlayerGame {
         return self.id;
     }
 
-
     pub(crate) fn wait_my_turn(&self) {
         let (lock, cvar) = &*self.my_turn;
         let mut is_my_turn = lock.lock().unwrap();
-        println!("[player {}] is it my turn already ? {}", self.id, is_my_turn);
+        println!("[player {}] is it my turn already? {}", self.id, is_my_turn);
         while !*is_my_turn {
             is_my_turn = cvar.wait(is_my_turn).unwrap();
         }
-        //reinicio para las proximas rondas
+        /* restart for rounds to come */
         *is_my_turn = false;
     }
 
@@ -76,7 +77,7 @@ impl PlayerGame {
         let (lock, cvar) = &*self.next_turn;
         let mut my_turn_end = lock.lock().unwrap();
         *my_turn_end = true;
-        // We notify the condvar that the next turn has started.
+        /* We notify the condvar that the next turn has started. */
         cvar.notify_one();
     }
 
@@ -90,4 +91,3 @@ impl PlayerGame {
         self.card_sender.send(Some(card_to_send)).unwrap();
     }
 }
-

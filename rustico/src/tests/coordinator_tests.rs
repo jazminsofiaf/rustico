@@ -7,7 +7,3 @@ fn coordinator_shuffle_deck() {
     let coordinator: Coordinator = Coordinator::new(5);
     assert_ne!(card_deck, coordinator.shuffle_deck());
 }
-
-
-
-
