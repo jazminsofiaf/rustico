@@ -14,6 +14,7 @@ pub struct PlayerGame {
     my_turn: Arc<(Mutex<bool>, Condvar)>,
     next_turn: Arc<(Mutex<bool>, Condvar)>,
     round_lock: Arc<RwLock<Box<dyn Round>>>,
+    logger_sender: Sender<String>,
 }
 
 impl PlayerGame {
@@ -23,7 +24,8 @@ impl PlayerGame {
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
                next_turn: Arc<(Mutex<bool>, Condvar)>,
-               round_lock: Arc<RwLock<Box<dyn Round>>>) -> PlayerGame {
+               round_lock: Arc<RwLock<Box<dyn Round>>>,
+               logger_sender: Sender<String>) -> PlayerGame {
         PlayerGame {
             id,
             card_sender,
@@ -32,11 +34,13 @@ impl PlayerGame {
             my_turn,
             next_turn,
             round_lock,
+            logger_sender,
         }
     }
 
     pub fn init(&mut self) {
         loop {
+            self.logger_sender.send(format!("⏲️  [Player {}] waiting to start round", self.id)).expect("error sending msg");
             println!("{}", format!("⏲️  [Player {}] waiting to start round", self.id).italic().red());
             self.start_of_round_barrier.wait();
 
@@ -46,6 +50,9 @@ impl PlayerGame {
 
             self.round_lock.read().unwrap().wait_turn(self.borrow());
             if self.round_lock.read().unwrap().should_skip_this_round(self.borrow()) {
+                self.logger_sender.send(format!("😓  [Player {}] skip round cuz I put the last card in prev. \
+                                        round, which was rustic",
+                                                self.id)).expect("error sending msg");
                 println!("{}", format!("😓  [Player {}] skip round cuz I put the last card in prev. \
                                         round, which was rustic",
                                        self.id).bright_magenta());
@@ -83,6 +90,7 @@ impl PlayerGame {
 
     pub fn play_this_round(&mut self) {
         let first_card: FrenchCard = self.my_cards.pop().expect("I've no more cards!");
+        self.logger_sender.send(format!("🃏  [Player {}] sending card {}", self.id, first_card)).expect("error sending msg");
         println!("{}", format!("🃏  [Player {}] sending card {}", self.id, first_card).bold().bright_magenta());
         let card_to_send = PlayerCard {
             player_id: self.id,

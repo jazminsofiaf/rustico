@@ -20,12 +20,13 @@ impl Player {
                start_of_round_barrier: Arc<Barrier>,
                my_turn: Arc<(Mutex<bool>, Condvar)>,
                next_turn: Arc<(Mutex<bool>, Condvar)>,
-               round_info: Arc<RwLock<Box<dyn Round>>>) -> Player {
+               round_info: Arc<RwLock<Box<dyn Round>>>,
+               logger_sender: Sender<String>) -> Player {
         Player {
             id,
             thread: Some(Player::init_play(id, card_sender, cards,
                                            start_of_round_barrier, my_turn,
-                                           next_turn, round_info)),
+                                           next_turn, round_info, logger_sender)),
             points: 0,
 
         }
@@ -41,11 +42,12 @@ impl Player {
                  barrier: Arc<Barrier>,
                  my_turn: Arc<(Mutex<bool>, Condvar)>,
                  next_turn: Arc<(Mutex<bool>, Condvar)>,
-                 round_info: Arc<RwLock<Box<dyn Round>>>) -> thread::JoinHandle<()> {
+                 round_info: Arc<RwLock<Box<dyn Round>>>,
+                 logger_sender: Sender<String>) -> thread::JoinHandle<()> {
         let thread_handler = thread::spawn(move || {
             let mut player_game = PlayerGame::new(id, card_sender, my_cards,
                                                   barrier, my_turn, next_turn,
-                                                  round_info);
+                                                  round_info, logger_sender);
             player_game.init();
         });
 

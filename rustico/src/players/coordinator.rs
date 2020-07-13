@@ -75,7 +75,8 @@ impl Coordinator {
                                              self.start_of_round_barrier.clone(),
                                              turn_to_wait,
                                              next_turn,
-                                             Arc::clone(round_info));
+                                             Arc::clone(round_info),
+                                             self.logger_sender.clone());
             players.push(player);
             turn_to_wait = turn;
         }
@@ -164,7 +165,7 @@ impl Coordinator {
         }
     }
 
-    pub fn print_leaderboard(&self, players: &mut Vec<Player>){
+    pub fn print_leaderboard(&self, players: &mut Vec<Player>) {
         println!();
         println!("{}", format!("                            |-------------+--------|").bold().bright_blue());
         println!("{}", format!("                            |     LEADERBOARD      |").bold().bright_blue());
@@ -172,24 +173,24 @@ impl Coordinator {
         println!("{}", format!("                            |  Player id  | Score  |").bold().bright_blue());
         println!("{}", format!("                            |-------------+--------|").bold().bright_blue());
 
-            for player in players.iter_mut() {
-                /* format players id to 2 digits */
-                let mut this_players_id = "".to_owned();
-                if player.get_id() < 10{
-                    this_players_id.push_str(" ");
-                }
-                this_players_id.push_str(player.get_id().to_string().as_str());
+        for player in players.iter_mut() {
+            /* format players id to 2 digits */
+            let mut this_players_id = "".to_owned();
+            if player.get_id() < 10 {
+                this_players_id.push_str(" ");
+            }
+            this_players_id.push_str(player.get_id().to_string().as_str());
 
-                /* format players score to 3 digits*/
-                let mut this_players_score = "".to_owned();
-                let score_as_str_len = player.get_points().to_string().len();
-                for _ in 0..(3-score_as_str_len) {
-                    this_players_score.push_str(" ");
-                }
-                this_players_score.push_str(player.get_points().to_string().as_str());
+            /* format players score to 3 digits*/
+            let mut this_players_score = "".to_owned();
+            let score_as_str_len = player.get_points().to_string().len();
+            for _ in 0..(3 - score_as_str_len) {
+                this_players_score.push_str(" ");
+            }
+            this_players_score.push_str(player.get_points().to_string().as_str());
 
-                /* print players score */
-                println!("{}", format!("                            |     {}      |  {}   |", this_players_id, this_players_score).bold().bright_blue());
+            /* print players score */
+            println!("{}", format!("                            |     {}      |  {}   |", this_players_id, this_players_score).bold().bright_blue());
         }
         println!("{}", format!("                            |-------------+--------|\n").bold().bright_blue());
     }
