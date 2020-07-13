@@ -83,7 +83,7 @@ impl PlayerGame {
 
     pub fn play_this_round(&mut self) {
         let first_card: FrenchCard = self.my_cards.pop().expect("I've no more cards!");
-        println!("{}", format!("🃏  [Player {}] sending card {}", self.id, first_card).bright_magenta());
+        println!("{}", format!("🃏  [Player {}] sending card {}", self.id, first_card).bold().bright_magenta());
         let card_to_send = PlayerCard {
             player_id: self.id,
             card: first_card,

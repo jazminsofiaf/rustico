@@ -5,6 +5,7 @@ use rand::Rng;
 use crate::players::player_game::PlayerGame;
 use crate::game::normal_round::NormalRound;
 use crate::game::rustic_round::RusticRound;
+use colored::*;
 
 
 const TEN_POINTS: i32 = 10;
@@ -77,7 +78,9 @@ pub trait Round: Send + Sync {
         let points = TEN_POINTS / draw.len() as i32;
 
         for winner_card in draw {
-            println!("sending points {} to player {} who send higher card : {}", points, winner_card.player_id, winner_card.card);
+            println!("{}", format!("Sending {} points to player {} who sent the highest card : {}",
+                                   points, winner_card.player_id,
+                                   winner_card.card).black().on_white().italic());
             players[winner_card.player_id as usize].win_points(points);
         }
         return players;

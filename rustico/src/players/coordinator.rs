@@ -85,6 +85,7 @@ impl Coordinator {
 
     pub fn let_the_game_begin(&mut self) {
         println!("{}", "                            🏁  Let the game begin! 🏁".bright_white());
+        println!();
 
         let deck: Vec<FrenchCard> = self.shuffle_deck();
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
@@ -117,7 +118,7 @@ impl Coordinator {
                 }
             }
 
-            println!("{}", "End of round.".bright_red());
+            println!("{}", "End of round.".italic().on_red().dimmed().white());
             {
                 /* this update occurs here because it is relevant for the next round,
                  * but it must be computed with this round's values
