@@ -13,3 +13,6 @@ Cargo.lock
 *idea
 
 *.iml
+
+# log file
+log.rustico
