@@ -4,6 +4,9 @@ use clap::App;
 use colored::*;
 
 use rustico::players::coordinator::Coordinator;
+use rustico::logger::logger::Logger;
+use std::sync::{mpsc, Arc, Mutex};
+use rustico::consts::consts::consts::STOP_LOGGING_MSG;
 
 fn main() {
     let mut number_of_players: i32 = 4;
@@ -11,9 +14,28 @@ fn main() {
     parse_args(&mut number_of_players, &mut debug);
     display_game_info(&mut number_of_players, &mut debug);
 
+    let (logger_sender, logger_receiver) = mpsc::channel();
+    let logger = Logger::new(debug, logger_receiver);
 
-    let mut coordinator: Coordinator = Coordinator::new(number_of_players);
+
+    let mut coordinator: Coordinator = Coordinator::new(number_of_players, logger_sender.clone());
     coordinator.let_the_game_begin();
+
+    /* send end of game msg to logger */
+    logger_sender.send(STOP_LOGGING_MSG.to_string()).expect("error sending msg2");
+    logger.join();
+}
+
+fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {
+    let yaml = clap::load_yaml!("cli.yml");
+    let matches = App::from_yaml(yaml).get_matches();
+
+    let cant_jugadores = matches.value_of("cant_jugadores").unwrap_or("4").parse::<i32>().unwrap();
+
+    let debug = matches.value_of("debug").unwrap_or("true").parse::<bool>().unwrap();
+
+    *_cant_jugadores = cant_jugadores;
+    *_debug = debug;
 }
 
 fn display_game_info(number_of_players: &mut i32, debug: &mut bool) {
@@ -36,16 +58,4 @@ o888o  o888o    `YbodP'    8\"\"88888P'      o888o     o888o  `Y8bood8P'   `Y8bo
     }
     println!("{}", format!("\nTo change any of the settings, please run the game with the\n\
                            --help (-h) flag for more info on how to do it.\n").white().dimmed());
-}
-
-fn parse_args(_cant_jugadores: &mut i32, _debug: &mut bool) {
-    let yaml = clap::load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml).get_matches();
-
-    let cant_jugadores = matches.value_of("cant_jugadores").unwrap_or("4").parse::<i32>().unwrap();
-
-    let debug = matches.value_of("debug").unwrap_or("true").parse::<bool>().unwrap();
-
-    *_cant_jugadores = cant_jugadores;
-    *_debug = debug;
 }

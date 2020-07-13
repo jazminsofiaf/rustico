@@ -21,10 +21,11 @@ pub struct Coordinator {
     start_of_round_barrier: Arc<Barrier>,
     card_sender: Sender<Option<PlayerCard>>,
     card_receiver: Receiver<Option<PlayerCard>>,
+    logger_sender: Sender<String>,
 }
 
 impl Coordinator {
-    pub fn new(number_of_players: i32) -> Coordinator {
+    pub fn new(number_of_players: i32, logger_sender: Sender<String>) -> Coordinator {
         /* to sync start of round.
          * the barrier receives num of players + 1 (for coord.)
          * because the coord. needs to handle each round's setup,
@@ -36,11 +37,14 @@ impl Coordinator {
 
         let (card_sender, card_receiver) = mpsc::channel::<Option<PlayerCard>>();
 
+        logger_sender.send("Creating coordinator...".to_string());
+
         return Coordinator {
             number_of_players,
             start_of_round_barrier,
             card_sender,
             card_receiver,
+            logger_sender,
         };
     }
 
@@ -84,6 +88,7 @@ impl Coordinator {
     }
 
     pub fn let_the_game_begin(&mut self) {
+        self.logger_sender.send("Beggining the game...".to_string());
         println!("{}", "                            🏁  Let the game begin! 🏁".bright_white());
         println!();
 
