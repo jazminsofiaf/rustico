@@ -7,6 +7,7 @@ use crate::game::round::{Round, get_random_type_round};
 use crate::game::normal_round::NormalRound;
 use crate::game::rustic_round::RusticRound;
 use crate::players::coordinator::PlayerCard;
+use crate::logger::logger::Logger;
 
 
 #[test]
@@ -119,6 +120,23 @@ fn rustic_round_compute_score_two_draw() {
 }
 
 #[test]
+fn rustic_round_compute_score_two_draw_normal_round() {
+    let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
+    hand.push(PlayerCard { player_id: 0, card: FrenchCard::new(CardSuit::CLOVER, CardNumber::TEN) });
+    hand.push(PlayerCard { player_id: 1, card: FrenchCard::new(CardSuit::PIKE, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 2, card: FrenchCard::new(CardSuit::DIAMOND, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 3, card: FrenchCard::new(CardSuit::HEART, CardNumber::FIVE) });
+
+
+    let round = NormalRound::new(Option::None, false);
+    let players: Vec<Player> = round.compute_score(hand, get_players());
+    assert_eq!(players[0].get_points(), 0);
+    assert_eq!(players[1].get_points(), 5);
+    assert_eq!(players[2].get_points(), 5);
+    assert_eq!(players[3].get_points(), 0);
+}
+
+#[test]
 fn rustic_round_compute_score_three_draw() {
     let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
     hand.push(PlayerCard { player_id: 2, card: FrenchCard::new(CardSuit::CLOVER, CardNumber::TEN) });
@@ -133,6 +151,23 @@ fn rustic_round_compute_score_three_draw() {
     assert_eq!(players[1].get_points(), 3);
     assert_eq!(players[2].get_points(), 1);
     assert_eq!(players[3].get_points(), -2);
+}
+
+#[test]
+fn rustic_round_compute_score_three_draw_normal_round() {
+    let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
+    hand.push(PlayerCard { player_id: 0, card: FrenchCard::new(CardSuit::CLOVER, CardNumber::TEN) });
+    hand.push(PlayerCard { player_id: 1, card: FrenchCard::new(CardSuit::PIKE, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 2, card: FrenchCard::new(CardSuit::DIAMOND, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 3, card: FrenchCard::new(CardSuit::HEART, CardNumber::A) });
+
+
+    let round = NormalRound::new(Option::None, false);
+    let players: Vec<Player> = round.compute_score(hand, get_players());
+    assert_eq!(players[0].get_points(), 0);
+    assert_eq!(players[1].get_points(), 3);
+    assert_eq!(players[2].get_points(), 3);
+    assert_eq!(players[3].get_points(), 3);
 }
 
 #[test]
@@ -151,8 +186,26 @@ fn rustic_round_compute_score_four_draw() {
     assert_eq!(players[3].get_points(), 3);
 }
 
+#[test]
+fn rustic_round_compute_score_four_draw_normal_round() {
+    let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
+    hand.push(PlayerCard { player_id: 3, card: FrenchCard::new(CardSuit::CLOVER, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 2, card: FrenchCard::new(CardSuit::PIKE, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 1, card: FrenchCard::new(CardSuit::DIAMOND, CardNumber::A) });
+    hand.push(PlayerCard { player_id: 0, card: FrenchCard::new(CardSuit::HEART, CardNumber::A) });
+
+    let round = NormalRound::new(Option::None, false);
+    let players: Vec<Player> = round.compute_score(hand, get_players());
+    assert_eq!(players[0].get_points(), 2);
+    assert_eq!(players[1].get_points(), 2);
+    assert_eq!(players[2].get_points(), 2);
+    assert_eq!(players[3].get_points(), 2);
+}
+
 fn get_players() -> Vec<Player> {
     let mut players: Vec<Player> = Vec::with_capacity(4);
+    let (logger_sender, logger_receiver) = mpsc::channel();
+    let _logger = Logger::new(false, logger_receiver);
 
     for player_id in 0..4 {
         let cards: Vec<FrenchCard> = Vec::new();
@@ -161,7 +214,9 @@ fn get_players() -> Vec<Player> {
         let arc: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(get_random_type_round()));
         let turn = Arc::new((Mutex::new(false), Condvar::new()));
         let next_turn = turn.clone();
-        let player: Player = Player::new(player_id, card_sender, cards, barrier, turn, next_turn, arc);
+        let player: Player = Player::new(player_id, card_sender, cards,
+                                         barrier, turn, next_turn,
+                                         arc, logger_sender.clone());
         players.push(player);
     }
     return players;
