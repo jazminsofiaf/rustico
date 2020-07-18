@@ -16,6 +16,7 @@ fn random_round_type() {
     assert!(round_type.get_name().to_string() == "RUSTIC".to_string() || round_type.get_name().to_string() == "NORMAL".to_string())
 }
 
+/* ### Tests de computo de puntajes ###*/
 #[test]
 fn normal_round_compute_score_one_winner() {
     let mut hand: Vec<PlayerCard> = Vec::with_capacity(4);
@@ -201,6 +202,8 @@ fn rustic_round_compute_score_four_draw_normal_round() {
     assert_eq!(players[2].get_points(), 2);
     assert_eq!(players[3].get_points(), 2);
 }
+
+/* ### Fin seccion: Tests de computo de puntajes ###*/
 
 fn get_players() -> Vec<Player> {
     let mut players: Vec<Player> = Vec::with_capacity(4);
