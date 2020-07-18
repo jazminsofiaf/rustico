@@ -50,7 +50,7 @@ pub trait Round: Send + Sync {
 
 
     fn wait_turn(&self, _player: &PlayerGame) {
-        /* default: do nothing */
+        /* default (aka ronda NORMAL): do nothing */
     }
 
     fn should_skip_this_round(&self, player: &PlayerGame) -> bool {
@@ -64,7 +64,7 @@ pub trait Round: Send + Sync {
     }
 
     fn end_turn(&self, _player: &PlayerGame) {
-        /* default: do nothing */
+        /* default (aka ronda NORMAL): do nothing */
     }
 
 

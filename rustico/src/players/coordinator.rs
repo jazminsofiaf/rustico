@@ -97,15 +97,15 @@ impl Coordinator {
         let number_of_rounds = deck.len() as i32 / self.number_of_players;
 
 
-        let round_lock: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(get_random_type_round()));
+        let round_info: Arc<RwLock<Box<dyn Round>>> = Arc::new(RwLock::new(get_random_type_round()));
         let turn_to_wait = Arc::new((Mutex::new(true), Condvar::new()));
         let turn_coordinator = turn_to_wait.clone();
-        let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_lock.borrow(), turn_to_wait);
+        let mut players: Vec<Player> = self.deal_cards_between_players(deck, round_info.borrow(), turn_to_wait);
 
 
         for this_round in 0..number_of_rounds {
             /* add 1 to this round so rounds aren't displayed as counting from 0 */
-            self.print_round_info(this_round + 1, round_lock.read().unwrap().get_name().to_string());
+            self.print_round_info(this_round + 1, round_info.read().unwrap().get_name().to_string());
 
             self.start_of_round_barrier.wait();
 
@@ -129,15 +129,15 @@ impl Coordinator {
                 /* this update occurs here because it is relevant for the next round,
                  * but it must be computed with this round's values
                  * */
-                let mut round_info_write_guard = round_lock.write().unwrap();
+                let mut round_info_write_guard = round_info.write().unwrap();
                 (*round_info_write_guard) = round_info_write_guard.get_next_round(hand.last().unwrap().player_id);
                 /* ends of block: free lock */
             }
 
-            players = round_lock.read().unwrap().compute_score(hand, players);
+            players = round_info.read().unwrap().compute_score(hand, players);
         }
 
-        self.end_game(players, round_lock);
+        self.end_game(players, round_info);
     }
 
     fn notify_first_turn_start(&self, turn_coordinator: &(Mutex<bool>, Condvar)) {

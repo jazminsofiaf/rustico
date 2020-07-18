@@ -56,6 +56,9 @@ impl PlayerGame {
                 println!("{}", format!("😓  [Player {}] skip round cuz I put the last card in prev. \
                                         round, which was rustic",
                                        self.id).bright_magenta());
+                /* The player has to send a card anyway because the coord.
+                 * expects a card from each player
+                 * */
                 self.card_sender.send(Option::None).unwrap();
                 continue;
             }
@@ -71,8 +74,6 @@ impl PlayerGame {
     pub(crate) fn wait_my_turn(&self) {
         let (lock, cvar) = &*self.my_turn;
         let mut is_my_turn = lock.lock().unwrap();
-        // TODO revisar si sacamos definitivamente este print. Se me hace bastante engorroso el output del programa teniendo el "waiting" y este.
-        // println!("{}", format!("[player {}] is it my turn already? {}", self.id, is_my_turn).italic().red());
         while !*is_my_turn {
             is_my_turn = cvar.wait(is_my_turn).unwrap();
         }
